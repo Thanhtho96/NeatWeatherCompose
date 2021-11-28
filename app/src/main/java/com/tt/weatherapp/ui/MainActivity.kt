@@ -2,16 +2,12 @@ package com.tt.weatherapp.ui
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Icon
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
@@ -24,7 +20,9 @@ import com.google.accompanist.insets.rememberInsetsPaddingValues
 import com.google.accompanist.insets.ui.BottomNavigation
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.BaseActivity
+import com.tt.weatherapp.ui.daily.Daily
 import com.tt.weatherapp.ui.home.Home
+import com.tt.weatherapp.ui.hourly.Hourly
 import org.koin.androidx.viewmodel.ext.android.getViewModel
 
 class MainActivity : BaseActivity<MainViewModel>() {
@@ -80,38 +78,19 @@ fun MainView(viewModel: MainViewModel) {
         }
     ) {
         NavHost(navController, startDestination = BottomNav.HomeNav.route) {
-            homeGraph(navController)
-            composable(BottomNav.HourlyNav.route) { Hourly() }
-            composable(BottomNav.DailyNav.route) { Daily() }
+            homeGraph(navController, viewModel)
+            composable(BottomNav.HourlyNav.route) { Hourly(viewModel) }
+            composable(BottomNav.DailyNav.route) { Daily(viewModel) }
         }
     }
 }
 
-fun NavGraphBuilder.homeGraph(navController: NavController) {
+fun NavGraphBuilder.homeGraph(navController: NavController, viewModel: MainViewModel) {
     navigation(startDestination = HomeRoute.Home.route, route = BottomNav.HomeNav.route) {
-        composable(HomeRoute.Home.route) { Home(navController) }
+        composable(HomeRoute.Home.route) { Home(navController, viewModel) }
         composable(HomeRoute.Search.route) { }
         composable(HomeRoute.Settings.route) { }
     }
-}
-
-
-@Composable
-fun Hourly() {
-    /*...*/
-    Box(modifier = Modifier.fillMaxSize()) {
-        Text(text = "Hourly", modifier = Modifier.align(Alignment.Center))
-    }
-    /*...*/
-}
-
-@Composable
-fun Daily() {
-    /*...*/
-    Box(modifier = Modifier.fillMaxSize()) {
-        Text(text = "Daily", modifier = Modifier.align(Alignment.Center))
-    }
-    /*...*/
 }
 
 sealed class BottomNav(

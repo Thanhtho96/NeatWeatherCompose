@@ -8,7 +8,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.StringRes
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -16,7 +18,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.google.accompanist.insets.ProvideWindowInsets
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.tt.weatherapp.common.network.NetworkEvent
-import com.tt.weatherapp.common.network.NetworkState
 import com.tt.weatherapp.ui.theme.NeatWeatherComposeTheme
 import com.tt.weatherapp.utils.CustomOkDialog
 import com.tt.weatherapp.utils.LoadingDialog
@@ -40,9 +41,6 @@ abstract class BaseActivity<M : BaseViewModel> : ComponentActivity() {
         viewModel = viewModelClass()
 
         setContent {
-            val messageError = remember { mutableStateOf<String?>(null) }
-            val isShowLoading = remember { mutableStateOf(false) }
-
             val systemUiController = rememberSystemUiController()
             val useDarkIcons = isSystemInDarkTheme().not()
 
@@ -57,29 +55,7 @@ abstract class BaseActivity<M : BaseViewModel> : ComponentActivity() {
                 lifecycleScope.launch {
                     repeatOnLifecycle(Lifecycle.State.STARTED) {
                         networkEvent.networkState.collect {
-                            when (it.networkState) {
-                                NetworkState.NO_INTERNET -> viewModel.sendViewStatus(
-                                    ViewStatus.Error(
-                                        it.message
-                                    )
-                                )
-                                NetworkState.BAD_REQUEST -> viewModel.sendViewStatus(
-                                    ViewStatus.Error(
-                                        it.message
-                                    )
-                                )
-                                NetworkState.NOT_FOUND -> viewModel.sendViewStatus(
-                                    ViewStatus.Error(
-                                        it.message
-                                    )
-                                )
-                                NetworkState.FORBIDDEN -> viewModel.sendViewStatus(
-                                    ViewStatus.Error(
-                                        it.message
-                                    )
-                                )
-                                NetworkState.UNAUTHORISED -> Unit
-                            }
+                            ViewStatus.Error(it.message)
                         }
                     }
                 }
@@ -91,25 +67,17 @@ abstract class BaseActivity<M : BaseViewModel> : ComponentActivity() {
                 }
             }
 
-            when (val uiState = viewModel.uiState.collectAsState().value) {
+            when (val uiState = viewModel.apiState.collectAsState().value) {
                 is ViewStatus.Error -> {
-                    messageError.value = uiState.errorMessage
-                }
-                is ViewStatus.ShowLoading -> {
-                    isShowLoading.value = uiState.isShow
+                    ShowOkDialog(uiState)
                 }
                 ViewStatus.ClickBack -> {
                     /*Do nothing*/
                 }
+                is ViewStatus.Toast -> toast(uiState.message)
+                is ViewStatus.ShowLoading -> ShowLoadingDialog(uiState.isLoading)
                 null -> Unit
             }
-
-            CustomOkDialog(
-                message = messageError.value,
-            ) {
-                viewModel.sendViewStatus(ViewStatus.Error(null))
-            }
-            LoadingDialog(isShow = isShowLoading.value)
         }
     }
 
@@ -119,6 +87,20 @@ abstract class BaseActivity<M : BaseViewModel> : ComponentActivity() {
         } else {
             super.dispatchTouchEvent(ev)
         }
+    }
+
+    @Composable
+    private fun ShowOkDialog(uiState: ViewStatus.Error) {
+        CustomOkDialog(
+            message = uiState.errorMessage,
+        ) {
+            viewModel.sendViewStatus(ViewStatus.Error(null))
+        }
+    }
+
+    @Composable
+    private fun ShowLoadingDialog(isLoading: Boolean) {
+        LoadingDialog(isShow = isLoading)
     }
 
     protected fun toast(@StringRes id: Int) {
