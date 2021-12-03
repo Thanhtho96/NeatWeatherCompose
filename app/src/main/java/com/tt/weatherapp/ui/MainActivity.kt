@@ -2,12 +2,16 @@ package com.tt.weatherapp.ui
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Icon
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
@@ -25,6 +29,7 @@ import com.tt.weatherapp.ui.home.Home
 import com.tt.weatherapp.ui.hourly.Hourly
 import org.koin.androidx.viewmodel.ext.android.getViewModel
 
+@ExperimentalFoundationApi
 class MainActivity : BaseActivity<MainViewModel>() {
     override fun viewModelClass() = getViewModel<MainViewModel>()
 
@@ -34,6 +39,7 @@ class MainActivity : BaseActivity<MainViewModel>() {
     }
 }
 
+@ExperimentalFoundationApi
 @Composable
 fun MainView(viewModel: MainViewModel) {
     val navController = rememberNavController()
@@ -77,10 +83,12 @@ fun MainView(viewModel: MainViewModel) {
             }
         }
     ) {
-        NavHost(navController, startDestination = BottomNav.HomeNav.route) {
-            homeGraph(navController, viewModel)
-            composable(BottomNav.HourlyNav.route) { Hourly(viewModel) }
-            composable(BottomNav.DailyNav.route) { Daily(viewModel) }
+        Box(Modifier.padding(it)) {
+            NavHost(navController, startDestination = BottomNav.HourlyNav.route) {
+                homeGraph(navController, viewModel)
+                composable(BottomNav.HourlyNav.route) { Hourly(viewModel) }
+                composable(BottomNav.DailyNav.route) { Daily(viewModel) }
+            }
         }
     }
 }

@@ -4,19 +4,17 @@ import androidx.lifecycle.viewModelScope
 import com.tt.weatherapp.common.BaseViewModel
 import com.tt.weatherapp.data.repositories.AppRepository
 import com.tt.weatherapp.model.Daily
-import com.tt.weatherapp.model.HourlyCustom
+import com.tt.weatherapp.model.Hourly
 import com.tt.weatherapp.model.WeatherData
+import com.tt.weatherapp.utils.DateUtil
 import kotlinx.coroutines.flow.*
-import java.text.SimpleDateFormat
-import java.util.*
-import kotlin.collections.ArrayList
 
 class MainViewModel(private val appRepository: AppRepository) : BaseViewModel() {
 
     lateinit var weatherData: StateFlow<WeatherData?>
         private set
 
-    lateinit var hourlyCustom: StateFlow<List<HourlyCustom>>
+    lateinit var hourlyCustom: StateFlow<Map<Long, List<Hourly>>>
         private set
 
     lateinit var dailyCustom: StateFlow<List<Daily>>
@@ -28,7 +26,7 @@ class MainViewModel(private val appRepository: AppRepository) : BaseViewModel() 
 
     private fun getWeatherInfo() {
         weatherData =
-            appRepository.getWeatherOneCall(1.0, 1.0, "")
+            appRepository.getWeatherOneCall(21.027763, 105.834160, "")
                 .onStart { showLoading(true) }
                 .onCompletion { showLoading(false) }
                 .stateIn(
@@ -39,36 +37,30 @@ class MainViewModel(private val appRepository: AppRepository) : BaseViewModel() 
 
         hourlyCustom = weatherData
             .filterNotNull()
-            .transform {
-                var dayHeader = 0
-                val listHourlyCustom = ArrayList<HourlyCustom>()
+            .transform { weatherData ->
+                var dayHeader = ""
+                var currentDt = 0L
+                val listHourly = ArrayList<Hourly>()
 
-                for (hourly in it.hourly) {
-                    var hourlyCustom: HourlyCustom
-                    val currentDay =
-                        SimpleDateFormat("dd", Locale.getDefault()).format(hourly.dt * 1000).toInt()
+                weatherData.hourly.forEach {
+                    val currentDay = DateUtil.format(DateUtil.DateFormat.DAY, it.dt * 1000)
 
-                    when {
-                        dayHeader == 0 -> {
-                            dayHeader = currentDay
-                            hourlyCustom = HourlyCustom(hourly, true)
-                        }
-                        currentDay != dayHeader -> {
-                            dayHeader = currentDay
-                            hourlyCustom = HourlyCustom(hourly, true)
-                        }
-                        else -> {
-                            hourlyCustom = HourlyCustom(hourly, false)
-                        }
+                    if (dayHeader == "" || currentDay != dayHeader) {
+                        dayHeader = currentDay
+                        currentDt = it.dt * 1000
                     }
-                    listHourlyCustom.add(hourlyCustom)
+
+                    listHourly.add(it.apply {
+                        dtHeader = currentDt
+                        unit = weatherData.unit
+                    })
                 }
 
-                emit(listHourlyCustom)
+                emit(listHourly.groupBy { it.dtHeader })
             }.stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(5000),
-                emptyList()
+                emptyMap()
             )
 
         dailyCustom = weatherData

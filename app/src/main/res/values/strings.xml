@@ -40,8 +40,15 @@
 
     <string name="txt_fahrenheit_temp_and_feel_like">%1$s°F - Feel Like: %2$s°F</string>
 
-    <string name="txt_wind_meter_per_sec_compass_direction">Wind: %1$s m/s - %2$s</string>
-    <string name="txt_wind_imperial_per_hour_compass_direction">Wind: %1$s miles/h - %2$s</string>
+    <plurals name="txt_wind_meter_per_sec_compass_direction">
+        <item quantity="one">Wind: %d m/s - %s</item>
+        <item quantity="other">Wind: %d m/s - %s</item>
+    </plurals>
+
+    <plurals name="txt_wind_imperial_per_hour_compass_direction">
+        <item quantity="one">Wind: %d mile/h - %2$s</item>
+        <item quantity="other">Wind: %d miles/h - %2$s</item>
+    </plurals>
 
     <string name="txt_metric_day_description">Day - Sunrise at %1$s. High %2$s°C. Feel Like: %3$s°C</string>
     <string name="txt_imperial_day_description">Day - Sunrise at %1$s. High %2$s°F. Feel Like: %3$s°F</string>

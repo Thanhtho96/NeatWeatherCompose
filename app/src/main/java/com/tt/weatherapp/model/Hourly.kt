@@ -1,5 +1,7 @@
 package com.tt.weatherapp.model
 
+import com.tt.weatherapp.common.Constant
+
 data class Hourly(
     val clouds: Int,
     val dew_point: Double,
@@ -12,5 +14,7 @@ data class Hourly(
     val temp: Double,
     val weather: List<Weather>,
     val wind_deg: Int,
-    val wind_speed: Double
+    val wind_speed: Double,
+    var dtHeader: Long,
+    var unit: Constant.Unit
 )

@@ -20,7 +20,7 @@ val networkModule = module {
     single { provideHttpClient(androidContext(), get()) }
     single { provideRetrofit(get()) }
     single { provideApiService(get()) }
-    single { AppRepository(get()) }
+    single { AppRepository(get(), get()) }
     single { NetworkEvent(get()) }
 }
 
