@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -15,7 +14,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringArrayResource
@@ -59,7 +57,8 @@ fun Hourly(viewModel: MainViewModel) {
 
         LazyColumn(
             Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(start = 10.dp, end = 10.dp, bottom = 10.dp)
+            contentPadding = PaddingValues(start = 10.dp, end = 10.dp, bottom = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             uiState.forEach { (day, dayHourly) ->
                 stickyHeader {
@@ -122,7 +121,6 @@ fun Hourly(viewModel: MainViewModel) {
                             )
                         }
                     }
-                    Divider(color = Color.Transparent, thickness = 10.dp)
                 }
             }
         }
