@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -21,6 +20,7 @@ import coil.compose.rememberImagePainter
 import com.google.accompanist.insets.statusBarsPadding
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.Constant
+import com.tt.weatherapp.model.HomeWeatherUnit
 import com.tt.weatherapp.ui.MainViewModel
 import com.tt.weatherapp.utils.DateUtil
 import com.tt.weatherapp.utils.DecimalFormat
@@ -29,7 +29,8 @@ import kotlin.math.roundToInt
 @Composable
 fun Daily(viewModel: MainViewModel) {
     val res = LocalContext.current.resources
-    val uiState = viewModel.weatherData.collectAsState().value ?: return
+    val uiState = viewModel.weatherData
+    val homeWeatherUnit = HomeWeatherUnit(viewModel.weatherData ?: return)
 
     Column(
         modifier = Modifier
@@ -55,6 +56,8 @@ fun Daily(viewModel: MainViewModel) {
             contentPadding = PaddingValues(start = 10.dp, end = 10.dp, bottom = 10.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            if (uiState == null) return@LazyColumn
+
             items(uiState.daily) { daily ->
                 Row {
                     Image(
@@ -77,10 +80,7 @@ fun Daily(viewModel: MainViewModel) {
                         )
                         Text(
                             text = stringResource(
-                                id = when (uiState.unit) {
-                                    Constant.Unit.METRIC -> R.string.txt_celsius_low_high_temp
-                                    Constant.Unit.IMPERIAL -> R.string.txt_fahrenheit_low_high_temp
-                                },
+                                homeWeatherUnit.highLowTemp,
                                 daily.temp.min.roundToInt().toString(),
                                 daily.temp.max.roundToInt().toString()
                             ),
@@ -88,10 +88,7 @@ fun Daily(viewModel: MainViewModel) {
                         )
                         Text(
                             text = res.getQuantityString(
-                                when (uiState.unit) {
-                                    Constant.Unit.METRIC -> R.plurals.txt_wind_meter_per_sec_compass_direction
-                                    Constant.Unit.IMPERIAL -> R.plurals.txt_wind_imperial_per_hour_compass_direction
-                                },
+                                homeWeatherUnit.windHourly,
                                 daily.wind_speed.roundToInt(),
                                 daily.wind_speed.roundToInt(),
                                 stringArrayResource(id = R.array.compass_directions)[((daily.wind_deg % 360) / 22.5).roundToInt()]
@@ -99,10 +96,7 @@ fun Daily(viewModel: MainViewModel) {
                         )
                         Text(
                             text = res.getString(
-                                when (uiState.unit) {
-                                    Constant.Unit.METRIC -> R.string.txt_metric_day_description
-                                    Constant.Unit.IMPERIAL -> R.string.txt_imperial_day_description
-                                },
+                                homeWeatherUnit.dayDescription,
                                 DateUtil.format(
                                     DateUtil.DateFormat.HOUR_MINUTE,
                                     daily.sunrise * 1000
@@ -114,10 +108,7 @@ fun Daily(viewModel: MainViewModel) {
                         )
                         Text(
                             text = res.getString(
-                                when (uiState.unit) {
-                                    Constant.Unit.METRIC -> R.string.txt_metric_night_description
-                                    Constant.Unit.IMPERIAL -> R.string.txt_imperial_night_description
-                                },
+                                homeWeatherUnit.nightDescription,
                                 DateUtil.format(
                                     DateUtil.DateFormat.HOUR_MINUTE,
                                     daily.sunset * 1000
@@ -130,10 +121,7 @@ fun Daily(viewModel: MainViewModel) {
 
                         Text(
                             text = res.getQuantityString(
-                                when (uiState.unit) {
-                                    Constant.Unit.METRIC -> R.plurals.txt_wind_meter_per_sec_compass_direction
-                                    Constant.Unit.IMPERIAL -> R.plurals.txt_wind_imperial_per_hour_compass_direction
-                                },
+                                homeWeatherUnit.windHourly,
                                 daily.wind_speed.roundToInt(),
                                 daily.wind_speed.roundToInt(),
                                 stringArrayResource(id = R.array.compass_directions)[((daily.wind_deg % 360) / 22.5).roundToInt()]

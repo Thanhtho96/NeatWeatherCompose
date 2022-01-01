@@ -8,7 +8,8 @@ object DateUtil {
     enum class DateFormat(val value: String) {
         DAY_OF_WEEK_MONTH_DAY("EEEE, MMMM dd"),
         DAY("dd"),
-        HOUR_MINUTE("HH:mm")
+        HOUR_MINUTE("HH:mm"),
+        DAY_OF_WEEK("EEE")
     }
 
     /**

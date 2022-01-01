@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -25,6 +24,7 @@ import coil.compose.rememberImagePainter
 import com.google.accompanist.insets.statusBarsPadding
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.Constant
+import com.tt.weatherapp.model.HomeWeatherUnit
 import com.tt.weatherapp.ui.MainViewModel
 import com.tt.weatherapp.utils.DateUtil
 import com.tt.weatherapp.utils.StringUtils.capitalize
@@ -34,7 +34,8 @@ import kotlin.math.roundToInt
 @Composable
 fun Hourly(viewModel: MainViewModel) {
     val res = LocalContext.current.resources
-    val uiState = viewModel.hourlyCustom.collectAsState().value
+    val uiState = viewModel.hourlyCustom
+    val homeWeatherUnit = HomeWeatherUnit(viewModel.weatherData ?: return)
 
     Column(
         modifier = Modifier
@@ -65,7 +66,8 @@ fun Hourly(viewModel: MainViewModel) {
                     Text(
                         modifier = Modifier
                             .background(color = MaterialTheme.colors.background)
-                            .fillMaxWidth(),
+                            .fillMaxWidth()
+                            .padding(bottom = 7.dp),
                         text =
                         if (DateUtils.isToday(day))
                             stringResource(id = R.string.txt_today)
@@ -97,10 +99,7 @@ fun Hourly(viewModel: MainViewModel) {
                             )
                             Text(
                                 text = stringResource(
-                                    id = when (hourly.unit) {
-                                        Constant.Unit.METRIC -> R.string.txt_celsius_temp_and_feel_like
-                                        Constant.Unit.IMPERIAL -> R.string.txt_fahrenheit_temp_and_feel_like
-                                    },
+                                    homeWeatherUnit.tempFeelLikeHourly,
                                     hourly.temp.roundToInt().toString(),
                                     hourly.feels_like.roundToInt().toString()
                                 ),
@@ -109,10 +108,7 @@ fun Hourly(viewModel: MainViewModel) {
                             Text(text = hourly.weather[0].description.capitalize())
                             Text(
                                 text = res.getQuantityString(
-                                    when (hourly.unit) {
-                                        Constant.Unit.METRIC -> R.plurals.txt_wind_meter_per_sec_compass_direction
-                                        Constant.Unit.IMPERIAL -> R.plurals.txt_wind_imperial_per_hour_compass_direction
-                                    },
+                                    homeWeatherUnit.windHourly,
                                     hourly.wind_speed.roundToInt(),
                                     hourly.wind_speed.roundToInt(),
                                     stringArrayResource(id = R.array.compass_directions)[((hourly.wind_deg % 360) / 22.5).roundToInt()]

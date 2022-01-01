@@ -14,31 +14,31 @@
     <string name="grant_permission">Grant Permission</string>
     <string name="location_permission_is_deny">Location permission is deny, please open Application\'s Settings to grant it</string>
 
-    <string name="txt_temp_without_unit" translatable="false">%1$s°</string>
-    <string name="txt_celsius_temp" translatable="false">%1$s°C</string>
-    <string name="txt_celsius_feel_like" translatable="false">%1$s°C</string>
+    <string name="txt_temp_without_unit" translatable="false">%s°</string>
+    <string name="txt_celsius_temp" translatable="false">%s°C</string>
+    <string name="txt_celsius_feel_like" translatable="false">%s°C</string>
 
-    <string name="txt_fahrenheit_temp" translatable="false">%1$s°F</string>
-    <string name="txt_fahrenheit_feel_like" translatable="false">%1$s°F</string>
+    <string name="txt_fahrenheit_temp" translatable="false">%s°F</string>
+    <string name="txt_fahrenheit_feel_like" translatable="false">%s°F</string>
 
-    <string name="txt_hpa_pressure" translatable="false">%1$s hPa</string>
-    <string name="txt_percentage_humidity" translatable="false">%1$s%%</string>
+    <string name="txt_hpa_pressure" translatable="false">%s hPa</string>
+    <string name="txt_percentage_humidity" translatable="false">%s%%</string>
 
-    <string name="txt_celsius_dew_point" translatable="false">%1$s°C</string>
-    <string name="txt_fahrenheit_dew_point" translatable="false">%1$s°F</string>
+    <string name="txt_celsius_dew_point" translatable="false">%s°C</string>
+    <string name="txt_fahrenheit_dew_point" translatable="false">%s°F</string>
 
-    <string name="txt_kilometer_visibility" translatable="false">%1$s km</string>
-    <string name="txt_meter_visibility" translatable="false">%1$s m</string>
+    <string name="txt_kilometer_visibility" translatable="false">%s km</string>
+    <string name="txt_meter_visibility" translatable="false">%s m</string>
 
-    <string name="txt_celsius_low_high_temp" translatable="false">%1$s°C / %2$s°C</string>
-    <string name="txt_fahrenheit_low_high_temp" translatable="false">%1$s°F / %2$s°F</string>
+    <string name="txt_celsius_low_high_temp" translatable="false">%s°C / %s°C</string>
+    <string name="txt_fahrenheit_low_high_temp" translatable="false">%s°F / %s°F</string>
 
-    <string name="txt_wind_speed_meter_per_sec" translatable="false">%1$s m/s</string>
-    <string name="txt_wind_speed_imperial_per_hour">%1$s miles/h</string>
+    <string name="txt_wind_speed_meter_per_sec" translatable="false">%s m/s</string>
+    <string name="txt_wind_speed_imperial_per_hour">%s miles/h</string>
 
-    <string name="txt_description_meter">%1$s. High %2$s°C. Wind %3$s at %4$s m/s</string>
+    <string name="txt_description_meter">%s. High %s°C. %s</string>
 
-    <string name="txt_fahrenheit_temp_and_feel_like">%1$s°F - Feel Like: %2$s°F</string>
+    <string name="txt_fahrenheit_temp_and_feel_like">%s°F - Feels Like: %s°F</string>
 
     <plurals name="txt_wind_meter_per_sec_compass_direction">
         <item quantity="one">Wind: %d m/s - %s</item>
@@ -46,33 +46,33 @@
     </plurals>
 
     <plurals name="txt_wind_imperial_per_hour_compass_direction">
-        <item quantity="one">Wind: %d mile/h - %2$s</item>
-        <item quantity="other">Wind: %d miles/h - %2$s</item>
+        <item quantity="one">Wind: %d mile/h - %s</item>
+        <item quantity="other">Wind: %d miles/h - %s</item>
     </plurals>
 
-    <string name="txt_metric_day_description">Day - Sunrise at %1$s. High %2$s°C. Feel Like: %3$s°C</string>
-    <string name="txt_imperial_day_description">Day - Sunrise at %1$s. High %2$s°F. Feel Like: %3$s°F</string>
+    <plurals name="txt_wind_meter_description">
+        <item quantity="one">Wind %2$s at %1$d m/h</item>
+        <item quantity="other">Wind %2$s at %1$d m/h</item>
+    </plurals>
 
-    <string name="txt_metric_night_description">Night - Sunset at %1$s. Low %2$s°C. Feel Like: %3$s°C</string>
-    <string name="txt_imperial_night_description">Night - Sunset at %1$s. Low %2$s°F. Feel Like: %3$s°F</string>
+    <plurals name="txt_wind_imperial_description">
+        <item quantity="one">Wind %2$s at %1$d mile/h</item>
+        <item quantity="other">Wind %2$s at %1$d miles/h</item>
+    </plurals>
 
-    <string name="txt_uvi_description">UV index: %1$s</string>
-    <string name="txt_rain_volume">Rain: %1$s mm</string>
-    <string name="txt_snow_volume">Snow: %1$s mm</string>
+    <string name="txt_metric_day_description">Day - Sunrise at %s. High %s°C. Feels Like: %s°C</string>
+    <string name="txt_imperial_day_description">Day - Sunrise at %s. High %s°F. Feels Like: %s°F</string>
+
+    <string name="txt_metric_night_description">Night - Sunset at %s. Low %s°C. Feels Like: %s°C</string>
+    <string name="txt_imperial_night_description">Night - Sunset at %s. Low %s°F. Feels Like: %s°F</string>
+
+    <string name="txt_uvi_description">UV index: %s</string>
+    <string name="txt_rain_volume">Rain: %s mm</string>
+    <string name="txt_snow_volume">Snow: %s mm</string>
 
     <string name="txt_low">Low</string>
     <string name="txt_medium">Medium</string>
     <string name="txt_High">High</string>
-
-    <string-array name="days_of_week">
-        <item>Sun</item>
-        <item>Mon</item>
-        <item>Tue</item>
-        <item>Wed</item>
-        <item>Thu</item>
-        <item>Fri</item>
-        <item>Sat</item>
-    </string-array>
 
     <string-array name="compass_directions">
         <item>North</item>
@@ -94,7 +94,7 @@
         <item>North</item>
     </string-array>
 
-    <string name="txt_feel_like">Feel Like</string>
+    <string name="txt_feel_like">Feels Like</string>
     <string name="txt_pressure">Pressure</string>
     <string name="txt_humidity">Humidity</string>
     <string name="txt_dew_point">Dew Point</string>
@@ -113,8 +113,8 @@
     <string name="txt_tomorrow">Tomorrow</string>
     <string name="txt_next_days">Next Days</string>
     <string name="txt_search_place">Search place</string>
-    <string name="txt_description_imperial">%1$s. High %2$s\°F. Wind %3$s at %4$s miles/h</string>
-    <string name="txt_celsius_temp_and_feel_like">%1$s\°C - Feel Like: %2$s\°C</string>
+    <string name="txt_description_imperial">%s. High %s\°F. %s</string>
+    <string name="txt_celsius_temp_and_feel_like">%s\°C - Feels Like: %s\°C</string>
     <string name="txt_current_weather">Current Weather</string>
     <string name="txt_history">History</string>
     <string name="txt_your_search_history">Your searched place history</string>
@@ -122,7 +122,6 @@
     <string name="txt_vietnamese" translatable="false">Tiếng Việt</string>
     <string name="txt_english" translatable="false">English</string>
     <string name="txt_my_location">My location</string>
-    <string name="txt_do_you_want_to_exit_application">Do you want to exit?</string>
     <string name="txt_yes">Yes</string>
     <string name="txt_no">No</string>
     <string name="txt_choose_language">Choose other Language</string>
@@ -136,19 +135,11 @@
     <string name="network_provider_not_available">Network Provider is not available</string>
     <string name="open_wireless_settings">Open Wireless Settings</string>
     <string name="txt_open_app_settings">Open Application\'s Settings</string>
-    <string name="please_rating">Please spend a little minutes to review our application on PlayStore</string>
-    <string name="txt_thank_you_message">Thank you for rating us</string>
-    <string name="text_email_review_subject">My review on %1$s</string>
-    <string name="please_choose_an_email_app">Please choose an Email app</string>
-    <string name="system_email" translatable="false">tt.thanh.vu@tomosia.com</string>
-    <string name="bold_text" translatable="false">&lt;b>%1$s&lt;/b></string>
-    <string name="italic_text" translatable="false">&lt;i>%1$s&lt;/i></string>
+    <string name="bold_text" translatable="false">&lt;b>%s&lt;/b></string>
+    <string name="italic_text" translatable="false">&lt;i>%s&lt;/i></string>
     <string name="txt_weather_info_notification_description">Push notification about weather in current time</string>
     <string name="weather_info_channel_name">Information about weather notification</string>
     <string name="weather_info_channel_ID" translatable="false">WEATHER_INFO_NOTIFICATION</string>
 
-    <plurals name="text_please_write_review">
-        <item quantity="one">** Please write and send your review to us, we will response ASAP **\nI give you %d star because …</item>
-        <item quantity="other">** Please write and send your review to us, we will response ASAP **\nI give you %d stars because …</item>
-    </plurals>
+    <string name="updated_at">Updated at %s</string>
 </resources>
