@@ -15,14 +15,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.google.accompanist.insets.ProvideWindowInsets
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.tt.weatherapp.common.network.NetworkEvent
 import com.tt.weatherapp.ui.theme.NeatWeatherComposeTheme
 import com.tt.weatherapp.utils.CustomOkDialog
 import com.tt.weatherapp.utils.LoadingDialog
 import com.tt.weatherapp.utils.StatusBarUtil
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
@@ -62,9 +60,7 @@ abstract class BaseActivity<M : BaseViewModel> : ComponentActivity() {
             }
 
             NeatWeatherComposeTheme {
-                ProvideWindowInsets {
-                    InitView()
-                }
+                InitView()
             }
 
             when (val uiState = viewModel.apiState.collectAsState().value) {

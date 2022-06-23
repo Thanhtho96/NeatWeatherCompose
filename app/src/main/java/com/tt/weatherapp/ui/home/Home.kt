@@ -1,6 +1,5 @@
 package com.tt.weatherapp.ui.home
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -12,6 +11,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,7 +27,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.google.accompanist.flowlayout.FlowRow
@@ -39,9 +38,12 @@ import com.tt.weatherapp.utils.DateUtil
 import com.tt.weatherapp.utils.StringUtils.capitalize
 import kotlin.math.roundToInt
 
-@ExperimentalFoundationApi
 @Composable
-fun Home(navController: NavController, viewModel: MainViewModel, showSetting: () -> Unit) {
+fun Home(
+    viewModel: MainViewModel,
+    showSetting: () -> Unit,
+    refresh: () -> Unit
+) {
     val res = LocalContext.current.resources
     val uiState = viewModel.weatherData ?: return
     val current = uiState.current
@@ -59,9 +61,16 @@ fun Home(navController: NavController, viewModel: MainViewModel, showSetting: ()
                 .defaultMinSize(minHeight = dimensionResource(id = R.dimen.actionBarSize))
                 .padding(horizontal = 17.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.End)
         ) {
-            IconButton(modifier = Modifier.then(Modifier.size(24.dp)),
+            IconButton(modifier = Modifier.size(24.dp),
+                onClick = { refresh.invoke() }) {
+                Icon(
+                    Icons.Default.Refresh,
+                    ""
+                )
+            }
+            IconButton(modifier = Modifier.size(24.dp),
                 onClick = { showSetting.invoke() }) {
                 Icon(
                     Icons.Default.Settings,
@@ -159,7 +168,10 @@ fun Home(navController: NavController, viewModel: MainViewModel, showSetting: ()
                                     Column(
                                         modifier = Modifier
                                             .size(boxDimen)
-                                            .background(Color.DarkGray, RoundedCornerShape(9.dp))
+                                            .background(
+                                                colorResource(id = R.color.home_grid),
+                                                RoundedCornerShape(9.dp)
+                                            )
                                             .padding(vertical = 12.dp),
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         verticalArrangement = Arrangement.SpaceBetween

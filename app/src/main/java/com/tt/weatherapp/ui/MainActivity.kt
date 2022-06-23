@@ -1,33 +1,34 @@
 package com.tt.weatherapp.ui
 
+import android.app.AlarmManager
 import android.os.Looper
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.*
 import com.google.accompanist.insets.ui.BottomNavigation
 import com.google.accompanist.permissions.*
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.google.android.gms.location.*
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.BaseActivity
@@ -36,12 +37,14 @@ import com.tt.weatherapp.data.local.SharedPrefHelper
 import com.tt.weatherapp.ui.daily.Daily
 import com.tt.weatherapp.ui.home.Home
 import com.tt.weatherapp.ui.hourly.Hourly
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.inject
 import org.koin.androidx.viewmodel.ext.android.getViewModel
 
 @ExperimentalPermissionsApi
 @ExperimentalFoundationApi
+@ExperimentalMaterialApi
 class MainActivity : BaseActivity<MainViewModel>() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationRequest: LocationRequest
@@ -51,20 +54,29 @@ class MainActivity : BaseActivity<MainViewModel>() {
 
     @Composable
     override fun InitView() {
-        MainView(viewModel)
+        SwipeRefresh(
+            state = rememberSwipeRefreshState(viewModel.isRefreshing),
+            onRefresh = {
+                forceRefreshWeather()
+            },
+        ) {
+            MainView(viewModel) {
+                forceRefreshWeather()
+            }
+        }
 
         FeatureThatRequiresLocationPermission {
             DisposableEffect(LocalLifecycleOwner.current) {
                 fusedLocationClient =
                     LocationServices.getFusedLocationProviderClient(this@MainActivity)
                 initLocationCallBack()
+                createLocationRequest()
 
                 fusedLocationClient.lastLocation
                     .addOnSuccessListener { location -> // Got last known location. In some rare situations this can be null.
                         if (location != null) {
                             viewModel.getWeatherInfo(location.latitude, location.longitude)
                         } else {
-                            createLocationRequest()
                             startLocationService()
                         }
                     }
@@ -73,7 +85,19 @@ class MainActivity : BaseActivity<MainViewModel>() {
                     fusedLocationClient.removeLocationUpdates(locationCallback)
                 }
             }
+
+            LaunchedEffect(true) {
+                while (true) {
+                    delay(AlarmManager.INTERVAL_FIFTEEN_MINUTES)
+                    forceRefreshWeather()
+                }
+            }
         }
+    }
+
+    private fun forceRefreshWeather() {
+        viewModel.refresh()
+        startLocationService()
     }
 
     private fun initLocationCallBack() {
@@ -106,10 +130,10 @@ class MainActivity : BaseActivity<MainViewModel>() {
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @ExperimentalFoundationApi
+@ExperimentalMaterialApi
 @Composable
-fun MainView(viewModel: MainViewModel) {
+fun MainView(viewModel: MainViewModel, refresh: () -> Unit) {
     val sharedPrefHelper by inject<SharedPrefHelper>()
     val navController = rememberNavController()
     val modalBottomSheetState =
@@ -136,28 +160,40 @@ fun MainView(viewModel: MainViewModel) {
                             shape = RoundedCornerShape(10.dp)
                         )
                         .height(48.dp)
+                        .clip(shape = RoundedCornerShape(10.dp))
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    val selectString = when (sharedPrefHelper.getChosenUnit()) {
+                        Constant.Unit.METRIC -> R.string.txt_metric
+                        Constant.Unit.IMPERIAL -> R.string.txt_fahrenheit
+                    }
                     listOf(R.string.txt_metric, R.string.txt_fahrenheit).forEach {
                         Box(
                             modifier = Modifier
                                 .weight(0.5f)
                                 .fillMaxHeight()
+                                .background(color = colorResource(id = if (it == selectString) R.color.yellow else R.color.transparent))
                                 .clickable {
                                     scope.launch {
-                                        val unit = when (it) {
-                                            R.string.txt_metric -> Constant.Unit.METRIC
-                                            else -> Constant.Unit.IMPERIAL
+                                        val isChangeUnit = selectString != it
+                                        if (isChangeUnit) {
+                                            val unit = when (it) {
+                                                R.string.txt_metric -> Constant.Unit.METRIC
+                                                else -> Constant.Unit.IMPERIAL
+                                            }
+                                            sharedPrefHelper.setChosenUnit(unit)
+                                            viewModel.getWeatherInfo(null, null, true)
                                         }
-                                        sharedPrefHelper.setChosenUnit(unit)
-                                        viewModel.getWeatherInfo(null, null, true)
                                         modalBottomSheetState.hide()
                                     }
                                 },
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(text = stringResource(id = it))
+                            Text(
+                                text = stringResource(id = it),
+                                color = colorResource(id = if (it == selectString) R.color.background else R.color.text_unit_unselect)
+                            )
                         }
                     }
                 }
@@ -212,9 +248,9 @@ fun MainView(viewModel: MainViewModel) {
             Box(Modifier.padding(it)) {
                 NavHost(navController, startDestination = BottomNav.HomeNav.route) {
                     homeGraph(
-                        navController,
-                        viewModel
-                    ) { scope.launch { modalBottomSheetState.show() } }
+                        viewModel,
+                        { scope.launch { modalBottomSheetState.show() } }
+                    ) { refresh.invoke() }
                     composable(BottomNav.HourlyNav.route) { Hourly(viewModel) }
                     composable(BottomNav.DailyNav.route) { Daily(viewModel) }
                 }
@@ -223,14 +259,13 @@ fun MainView(viewModel: MainViewModel) {
     }
 }
 
-@ExperimentalFoundationApi
 fun NavGraphBuilder.homeGraph(
-    navController: NavController,
     viewModel: MainViewModel,
-    showSetting: () -> Unit
+    showSetting: () -> Unit,
+    refresh: () -> Unit
 ) {
     navigation(startDestination = HomeRoute.Home.route, route = BottomNav.HomeNav.route) {
-        composable(HomeRoute.Home.route) { Home(navController, viewModel, showSetting) }
+        composable(HomeRoute.Home.route) { Home(viewModel, showSetting, refresh) }
         composable(HomeRoute.Search.route) { }
         composable(HomeRoute.Settings.route) { }
     }

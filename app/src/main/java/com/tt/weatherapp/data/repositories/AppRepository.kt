@@ -27,11 +27,12 @@ class AppRepository(
         latitude: Double?,
         longitude: Double?,
         isChangeUnit: Boolean,
+        isForceRefresh: Boolean,
         language: String = ""
     ) = flow {
         val cachedWeatherData = weatherDao.loadWeather()
 
-        if (isChangeUnit.not()) {
+        if (isChangeUnit.not() && isForceRefresh.not()) {
             if (latitude == null || longitude == null) {
                 emit(Resource.Success(cachedWeatherData))
                 return@flow

@@ -16,6 +16,7 @@ import com.tt.weatherapp.model.Hourly
 import com.tt.weatherapp.model.WeatherData
 import com.tt.weatherapp.utils.DateUtil
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -34,8 +35,15 @@ class MainViewModel(private val appRepository: AppRepository) : BaseViewModel() 
     var listDailyTempInfo by mutableStateOf<List<DailyTempInfo>>(emptyList())
         private set
 
+    var isRefreshing by mutableStateOf(false)
+        private set
+
     init {
         getWeatherInfo()
+    }
+
+    fun refresh() {
+        isRefreshing = true
     }
 
     fun getWeatherInfo(
@@ -44,13 +52,19 @@ class MainViewModel(private val appRepository: AppRepository) : BaseViewModel() 
         isChangeUnit: Boolean = false
     ) {
         viewModelScope.launch {
-            appRepository.getWeatherOneCall(latitude, longitude, isChangeUnit)
+            appRepository.getWeatherOneCall(
+                latitude,
+                longitude,
+                isChangeUnit,
+                isRefreshing
+            )
+                .onCompletion { isRefreshing = false }
                 .shareIn(
                     viewModelScope,
                     SharingStarted.WhileSubscribed(5000),
                 ).collect { resource ->
                     when (resource) {
-                        is Resource.Loading -> showLoading(resource.isLoading)
+                        is Resource.Loading -> refresh()
                         is Resource.Success -> {
                             weatherData = resource.value
                             val data = resource.value ?: return@collect

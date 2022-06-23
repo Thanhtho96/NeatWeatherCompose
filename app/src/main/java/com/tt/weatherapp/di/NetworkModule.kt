@@ -9,7 +9,6 @@ import com.tt.weatherapp.data.repositories.AppRepository
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
-import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 import retrofit2.Retrofit
@@ -59,11 +58,8 @@ private fun provideApiService(retrofit: Retrofit): ApiService {
 }
 
 private fun provideHttpClient(context: Context, networkEvent: NetworkEvent): OkHttpClient {
-    val loggingInterceptor = HttpLoggingInterceptor()
     val networkInterceptor = NetworkInterceptor(context, networkEvent)
-    loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
     return OkHttpClient.Builder()
-        .addInterceptor(loggingInterceptor)
         .addInterceptor(networkInterceptor)
         .addInterceptor(interceptor)
         .connectTimeout(180, TimeUnit.SECONDS)
