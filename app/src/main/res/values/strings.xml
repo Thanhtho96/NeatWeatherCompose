@@ -41,13 +41,13 @@
     <string name="txt_fahrenheit_temp_and_feel_like">%s°F - Feels Like: %s°F</string>
 
     <plurals name="txt_wind_meter_per_sec_compass_direction">
-        <item quantity="one">Wind: %d m/s - %s</item>
-        <item quantity="other">Wind: %d m/s - %s</item>
+        <item quantity="one">Wind: %1$.2f m/s - %2$s</item>
+        <item quantity="other">Wind: %1$.2f m/s - %2$s</item>
     </plurals>
 
     <plurals name="txt_wind_imperial_per_hour_compass_direction">
-        <item quantity="one">Wind: %d mile/h - %s</item>
-        <item quantity="other">Wind: %d miles/h - %s</item>
+        <item quantity="one">Wind: %1$.2f mile/h - %2$s</item>
+        <item quantity="other">Wind: %1$.2f miles/h - %2$s</item>
     </plurals>
 
     <plurals name="txt_wind_meter_description">
@@ -69,6 +69,7 @@
     <string name="txt_uvi_description">UV index: %s</string>
     <string name="txt_rain_volume">Rain: %s mm</string>
     <string name="txt_snow_volume">Snow: %s mm</string>
+    <string name="txt_percentage">%s%%</string>
 
     <string name="txt_low">Low</string>
     <string name="txt_medium">Medium</string>

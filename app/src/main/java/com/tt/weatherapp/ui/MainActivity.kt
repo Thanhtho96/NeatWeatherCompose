@@ -1,114 +1,236 @@
 package com.tt.weatherapp.ui
 
-import androidx.activity.result.contract.ActivityResultContracts
+import android.os.Looper
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
-import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.*
-import com.google.accompanist.insets.LocalWindowInsets
-import com.google.accompanist.insets.rememberInsetsPaddingValues
 import com.google.accompanist.insets.ui.BottomNavigation
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.*
+import com.google.android.gms.location.*
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.BaseActivity
+import com.tt.weatherapp.common.Constant
+import com.tt.weatherapp.data.local.SharedPrefHelper
 import com.tt.weatherapp.ui.daily.Daily
 import com.tt.weatherapp.ui.home.Home
 import com.tt.weatherapp.ui.hourly.Hourly
-import com.tt.weatherapp.utils.Utils
+import kotlinx.coroutines.launch
+import org.koin.androidx.compose.inject
 import org.koin.androidx.viewmodel.ext.android.getViewModel
 
 @ExperimentalPermissionsApi
 @ExperimentalFoundationApi
 class MainActivity : BaseActivity<MainViewModel>() {
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var locationRequest: LocationRequest
+    private lateinit var locationCallback: LocationCallback
+
     override fun viewModelClass() = getViewModel<MainViewModel>()
-    private val startSettingsLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
 
     @Composable
     override fun InitView() {
         MainView(viewModel)
 
-        FeatureThatRequiresLocationPermission(
-            {
-                Utils.openSettings(this, startSettingsLauncher)
-            }, {
-                // Todo Call API
-            })
-    }
-}
+        FeatureThatRequiresLocationPermission {
+            DisposableEffect(LocalLifecycleOwner.current) {
+                fusedLocationClient =
+                    LocationServices.getFusedLocationProviderClient(this@MainActivity)
+                initLocationCallBack()
 
-@ExperimentalFoundationApi
-@Composable
-fun MainView(viewModel: MainViewModel) {
-    val navController = rememberNavController()
-    val items = listOf(
-        BottomNav.HomeNav,
-        BottomNav.HourlyNav,
-        BottomNav.DailyNav
-    )
-
-    Scaffold(
-        bottomBar = {
-            BottomNavigation(
-                contentPadding = rememberInsetsPaddingValues(
-                    insets = LocalWindowInsets.current.navigationBars
-                )
-            ) {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
-                items.forEach { screen ->
-                    BottomNavigationItem(
-                        icon = { Icon(painterResource(screen.icon), contentDescription = null) },
-                        label = { Text(stringResource(id = screen.resourceId)) },
-                        selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
-                        onClick = {
-                            navController.navigate(screen.route) {
-                                // Pop up to the start destination of the graph to
-                                // avoid building up a large stack of destinations
-                                // on the back stack as users select items
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                // Avoid multiple copies of the same destination when
-                                // reselecting the same item
-                                launchSingleTop = true
-                                // Restore state when reselecting a previously selected item
-                                restoreState = true
-                            }
+                fusedLocationClient.lastLocation
+                    .addOnSuccessListener { location -> // Got last known location. In some rare situations this can be null.
+                        if (location != null) {
+                            viewModel.getWeatherInfo(location.latitude, location.longitude)
+                        } else {
+                            createLocationRequest()
+                            startLocationService()
                         }
-                    )
+                    }
+
+                onDispose {
+                    fusedLocationClient.removeLocationUpdates(locationCallback)
                 }
             }
         }
+    }
+
+    private fun initLocationCallBack() {
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.locations.forEach {
+                    viewModel.getWeatherInfo(it.latitude, it.longitude)
+                    return@forEach
+                }
+
+                fusedLocationClient.removeLocationUpdates(this)
+            }
+        }
+    }
+
+    private fun createLocationRequest() {
+        locationRequest = LocationRequest.create().apply {
+            interval = 1000000
+            fastestInterval = 500000
+            priority = Priority.PRIORITY_HIGH_ACCURACY
+        }
+    }
+
+    private fun startLocationService() {
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
+            locationCallback,
+            Looper.getMainLooper()
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@ExperimentalFoundationApi
+@Composable
+fun MainView(viewModel: MainViewModel) {
+    val sharedPrefHelper by inject<SharedPrefHelper>()
+    val navController = rememberNavController()
+    val modalBottomSheetState =
+        rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
+    val scope = rememberCoroutineScope()
+
+    ModalBottomSheetLayout(
+        sheetContent = {
+            Column(
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .padding(top = 20.dp, bottom = 40.dp, start = 25.dp, end = 25.dp)
+            ) {
+                Text(
+                    text = stringResource(id = R.string.txt_unit),
+                    modifier = Modifier.padding(bottom = 7.dp)
+                )
+
+                Row(
+                    modifier = Modifier
+                        .border(
+                            width = 2.dp,
+                            color = colorResource(id = R.color.yellow),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                        .height(48.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    listOf(R.string.txt_metric, R.string.txt_fahrenheit).forEach {
+                        Box(
+                            modifier = Modifier
+                                .weight(0.5f)
+                                .fillMaxHeight()
+                                .clickable {
+                                    scope.launch {
+                                        val unit = when (it) {
+                                            R.string.txt_metric -> Constant.Unit.METRIC
+                                            else -> Constant.Unit.IMPERIAL
+                                        }
+                                        sharedPrefHelper.setChosenUnit(unit)
+                                        viewModel.getWeatherInfo(null, null, true)
+                                        modalBottomSheetState.hide()
+                                    }
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(text = stringResource(id = it))
+                        }
+                    }
+                }
+            }
+        },
+        sheetState = modalBottomSheetState,
+        sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
     ) {
-        Box(Modifier.padding(it)) {
-            NavHost(navController, startDestination = BottomNav.HomeNav.route) {
-                homeGraph(navController, viewModel)
-                composable(BottomNav.HourlyNav.route) { Hourly(viewModel) }
-                composable(BottomNav.DailyNav.route) { Daily(viewModel) }
+        val items = listOf(
+            BottomNav.HomeNav,
+            BottomNav.HourlyNav,
+            BottomNav.DailyNav
+        )
+
+        Scaffold(
+            bottomBar = {
+                BottomNavigation(
+                    contentPadding = WindowInsets.navigationBars.asPaddingValues()
+                ) {
+                    val navBackStackEntry by navController.currentBackStackEntryAsState()
+                    val currentDestination = navBackStackEntry?.destination
+                    items.forEach { screen ->
+                        BottomNavigationItem(
+                            icon = {
+                                Icon(
+                                    painterResource(screen.icon),
+                                    contentDescription = null
+                                )
+                            },
+                            label = { Text(stringResource(id = screen.resourceId)) },
+                            selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                            onClick = {
+                                navController.navigate(screen.route) {
+                                    // Pop up to the start destination of the graph to
+                                    // avoid building up a large stack of destinations
+                                    // on the back stack as users select items
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    // Avoid multiple copies of the same destination when
+                                    // re-selecting the same item
+                                    launchSingleTop = true
+                                    // Restore state when re-selecting a previously selected item
+                                    restoreState = true
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        ) {
+            Box(Modifier.padding(it)) {
+                NavHost(navController, startDestination = BottomNav.HomeNav.route) {
+                    homeGraph(
+                        navController,
+                        viewModel
+                    ) { scope.launch { modalBottomSheetState.show() } }
+                    composable(BottomNav.HourlyNav.route) { Hourly(viewModel) }
+                    composable(BottomNav.DailyNav.route) { Daily(viewModel) }
+                }
             }
         }
     }
 }
 
 @ExperimentalFoundationApi
-fun NavGraphBuilder.homeGraph(navController: NavController, viewModel: MainViewModel) {
+fun NavGraphBuilder.homeGraph(
+    navController: NavController,
+    viewModel: MainViewModel,
+    showSetting: () -> Unit
+) {
     navigation(startDestination = HomeRoute.Home.route, route = BottomNav.HomeNav.route) {
-        composable(HomeRoute.Home.route) { Home(navController, viewModel) }
+        composable(HomeRoute.Home.route) { Home(navController, viewModel, showSetting) }
         composable(HomeRoute.Search.route) { }
         composable(HomeRoute.Settings.route) { }
     }
@@ -133,61 +255,52 @@ sealed class HomeRoute(val route: String) {
 @ExperimentalPermissionsApi
 @Composable
 private fun FeatureThatRequiresLocationPermission(
-    navigateToSettingsScreen: () -> Unit,
-    hasPermission: () -> Unit
+    hasPermission: @Composable () -> Unit
 ) {
     val res = LocalContext.current.resources
-    // Track if the user doesn't want to see the rationale any more.
-    var doNotShowRationale by rememberSaveable { mutableStateOf(false) }
 
-    // Camera permission state
-    val cameraPermissionState = rememberPermissionState(
+    // Location permission state
+    val locationPermissionState = rememberPermissionState(
         android.Manifest.permission.ACCESS_COARSE_LOCATION
     )
 
-    when {
+    val fineLocationPermissionState = rememberMultiplePermissionsState(
+        listOf(
+            android.Manifest.permission.ACCESS_COARSE_LOCATION,
+            android.Manifest.permission.ACCESS_FINE_LOCATION
+        )
+    )
+
+    when (locationPermissionState.status) {
         // If the location permission is granted, then show screen with the feature enabled
-        cameraPermissionState.hasPermission -> {
+        PermissionStatus.Granted -> {
             hasPermission()
         }
         // If the user denied the permission but a rationale should be shown, or the user sees
         // the permission for the first time, explain why the feature is needed by the app and allow
         // the user to be presented with the permission again or to not see the rationale any more.
-        cameraPermissionState.shouldShowRationale ||
-                !cameraPermissionState.permissionRequested -> {
-            if (!doNotShowRationale) {
-                AlertDialog(
-                    onDismissRequest = { },
-                    title = { Text(text = res.getString(R.string.need_location_permission)) },
-                    confirmButton = {
-                        Button(onClick = { cameraPermissionState.launchPermissionRequest() }) {
-                            Text(res.getString(R.string.ok))
-                        }
-                    },
-                    dismissButton = {
-                        Button(onClick = { doNotShowRationale = true }) {
-                            Text(res.getString(R.string.cancel))
-                        }
-                    })
+        is PermissionStatus.Denied -> {
+            val permissionTitle = if (locationPermissionState.status.shouldShowRationale) {
+                // If the user has denied the permission but the rationale can be shown,
+                // then gently explain why the app requires this permission
+                res.getString(R.string.need_location_permission)
+            } else {
+                // If it's the first time the user lands on this feature, or the user
+                // doesn't want to be asked again for this permission, explain that the
+                // permission is required
+                res.getString(R.string.need_location_permission)
             }
-        }
-        // If the criteria above hasn't been met, the user denied the permission. Let's present
-        // the user with a FAQ in case they want to know more and send them to the Settings screen
-        // to enable it the future there if they want to.
-        else -> {
-            var isShowDialog by remember { mutableStateOf(true) }
-            if (isShowDialog.not()) return
 
             AlertDialog(
                 onDismissRequest = { },
-                title = { Text(text = res.getString(R.string.location_permission_is_deny)) },
+                title = { Text(text = permissionTitle) },
                 confirmButton = {
-                    Button(onClick = { navigateToSettingsScreen() }) {
-                        Text(res.getString(R.string.txt_open_app_settings))
+                    Button(onClick = { fineLocationPermissionState.launchMultiplePermissionRequest() }) {
+                        Text(res.getString(R.string.ok))
                     }
                 },
                 dismissButton = {
-                    Button(onClick = { isShowDialog = false }) {
+                    Button(onClick = { }) {
                         Text(res.getString(R.string.cancel))
                     }
                 })

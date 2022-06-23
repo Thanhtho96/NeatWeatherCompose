@@ -20,13 +20,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.rememberImagePainter
-import com.google.accompanist.insets.statusBarsPadding
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.model.HomeWeatherUnit
 import com.tt.weatherapp.ui.MainViewModel
 import com.tt.weatherapp.utils.DateUtil
+import com.tt.weatherapp.utils.DecimalFormat
 import com.tt.weatherapp.utils.StringUtils.capitalize
 import kotlin.math.roundToInt
 
@@ -34,7 +35,7 @@ import kotlin.math.roundToInt
 @Composable
 fun Hourly(viewModel: MainViewModel) {
     val res = LocalContext.current.resources
-    val uiState = viewModel.hourlyCustom
+    val uiState = viewModel.hourly.groupBy { it.dtHeader }
     val homeWeatherUnit = HomeWeatherUnit(viewModel.weatherData ?: return)
 
     Column(
@@ -81,10 +82,13 @@ fun Hourly(viewModel: MainViewModel) {
                 items(dayHourly) { hourly ->
                     Row {
                         Image(
-                            painter = rememberImagePainter(
-                                builder = {
-                                    crossfade(true)
-                                }, data = Constant.getWeatherIcon(hourly.weather.first().icon)
+                            painter = rememberAsyncImagePainter(
+                                ImageRequest.Builder(LocalContext.current)
+                                    .data(
+                                        data = Constant.getWeatherIcon(hourly.weather.first().icon)
+                                    ).apply(block = fun ImageRequest.Builder.() {
+                                        crossfade(true)
+                                    }).build()
                             ),
                             contentDescription = null,
                             modifier = Modifier.size(37.dp)
@@ -110,11 +114,31 @@ fun Hourly(viewModel: MainViewModel) {
                                 text = res.getQuantityString(
                                     homeWeatherUnit.windHourly,
                                     hourly.wind_speed.roundToInt(),
-                                    hourly.wind_speed.roundToInt(),
+                                    hourly.wind_speed,
                                     stringArrayResource(id = R.array.compass_directions)[((hourly.wind_deg % 360) / 22.5).roundToInt()]
                                 ),
-                                modifier = Modifier.alpha(0.7F)
+                                modifier = Modifier
+                                    .alpha(0.7F)
+                                    .padding(top = 3.dp)
                             )
+                            hourly.rain?.oneHour?.let {
+                                Text(
+                                    text = res.getString(
+                                        R.string.txt_rain_volume,
+                                        DecimalFormat.format(it)
+                                    ),
+                                    modifier = Modifier.alpha(0.7F)
+                                )
+                            }
+                            hourly.snow?.oneHour?.let {
+                                Text(
+                                    text = res.getString(
+                                        R.string.txt_snow_volume,
+                                        DecimalFormat.format(it)
+                                    ),
+                                    modifier = Modifier.alpha(0.7F)
+                                )
+                            }
                         }
                     }
                 }

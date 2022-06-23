@@ -7,5 +7,6 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <dimen name="hei">?actionBarSize</dimen>
+    <color name="blue">#118EF1</color>
+    <color name="yellow">#F3CE15</color>
 </resources>

@@ -6,7 +6,7 @@ import com.tt.weatherapp.common.Constant
 class SharedPrefHelper constructor(private val sharedPref: SharedPreferences) {
 
     fun setChosenUnit(chosenUnit: Constant.Unit) =
-        sharedPref.edit().putString(UNIT, chosenUnit.value).apply()
+        sharedPref.edit().putString(UNIT, chosenUnit.value).commit()
 
     fun getChosenUnit() =
         Constant.Unit.fromString(sharedPref.getString(UNIT, Constant.Unit.METRIC.value) ?: "")

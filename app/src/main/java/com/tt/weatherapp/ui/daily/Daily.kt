@@ -16,8 +16,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.rememberImagePainter
-import com.google.accompanist.insets.statusBarsPadding
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.model.HomeWeatherUnit
@@ -61,10 +61,13 @@ fun Daily(viewModel: MainViewModel) {
             items(uiState.daily) { daily ->
                 Row {
                     Image(
-                        painter = rememberImagePainter(
-                            builder = {
-                                crossfade(true)
-                            }, data = Constant.getWeatherIcon(daily.weather.first().icon)
+                        painter = rememberAsyncImagePainter(
+                            ImageRequest.Builder(LocalContext.current)
+                                .data(
+                                    data = Constant.getWeatherIcon(daily.weather.first().icon)
+                                ).apply(block = fun ImageRequest.Builder.() {
+                                    crossfade(true)
+                                }).build()
                         ),
                         contentDescription = null,
                         modifier = Modifier.size(37.dp)
@@ -90,9 +93,10 @@ fun Daily(viewModel: MainViewModel) {
                             text = res.getQuantityString(
                                 homeWeatherUnit.windHourly,
                                 daily.wind_speed.roundToInt(),
-                                daily.wind_speed.roundToInt(),
+                                daily.wind_speed,
                                 stringArrayResource(id = R.array.compass_directions)[((daily.wind_deg % 360) / 22.5).roundToInt()]
                             ),
+                            modifier = Modifier.padding(top = 3.dp)
                         )
                         Text(
                             text = res.getString(
@@ -104,6 +108,7 @@ fun Daily(viewModel: MainViewModel) {
                                 daily.temp.day.roundToInt().toString(),
                                 daily.feels_like.day.roundToInt().toString()
                             ),
+                            fontSize = 13.sp,
                             modifier = Modifier.alpha(0.7F)
                         )
                         Text(
@@ -116,19 +121,8 @@ fun Daily(viewModel: MainViewModel) {
                                 daily.temp.night.roundToInt().toString(),
                                 daily.feels_like.night.roundToInt().toString()
                             ),
+                            fontSize = 13.sp,
                             modifier = Modifier.alpha(0.7F)
-                        )
-
-                        Text(
-                            text = res.getQuantityString(
-                                homeWeatherUnit.windHourly,
-                                daily.wind_speed.roundToInt(),
-                                daily.wind_speed.roundToInt(),
-                                stringArrayResource(id = R.array.compass_directions)[((daily.wind_deg % 360) / 22.5).roundToInt()]
-                            ),
-                            modifier = Modifier
-                                .alpha(0.7F)
-                                .padding(bottom = 5.dp)
                         )
                         Text(
                             text = res.getString(
@@ -143,7 +137,10 @@ fun Daily(viewModel: MainViewModel) {
                                     else -> res.getString(R.string.txt_High)
                                 }
                             ),
-                            modifier = Modifier.alpha(0.7F)
+                            fontSize = 13.sp,
+                            modifier = Modifier
+                                .alpha(0.7F)
+                                .padding(top = 3.dp)
                         )
                         daily.rain?.let {
                             Text(
@@ -151,16 +148,17 @@ fun Daily(viewModel: MainViewModel) {
                                     R.string.txt_rain_volume,
                                     DecimalFormat.format(it)
                                 ),
+                                fontSize = 13.sp,
                                 modifier = Modifier.alpha(0.7F)
                             )
                         }
-
                         daily.snow?.let {
                             Text(
                                 text = res.getString(
                                     R.string.txt_snow_volume,
                                     DecimalFormat.format(it)
                                 ),
+                                fontSize = 13.sp,
                                 modifier = Modifier.alpha(0.7F)
                             )
                         }

@@ -15,6 +15,7 @@ data class Hourly(
     val weather: List<Weather>,
     val wind_deg: Int,
     val wind_speed: Double,
+    val pop: Double?,
     var dtHeader: Long,
     var unit: Constant.Unit
 )
