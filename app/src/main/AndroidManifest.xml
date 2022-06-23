@@ -25,12 +25,5 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <meta-data
-            android:name="com.here.sdk.access_key_id"
-            android:value="I74LwV2qi2UWK6rz1o8zcg" />
-        <meta-data
-            android:name="com.here.sdk.access_key_secret"
-            android:value="q6lnIy2AtLsvVlotj2FO8-zTaaaz4KYiB4Fl2ZDqUhlV5u__1Pcnw62QL2tiVkwY760rmLne0egU6EUH8xiSpw" />
     </application>
 </manifest>
