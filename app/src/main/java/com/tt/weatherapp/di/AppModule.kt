@@ -10,12 +10,12 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val viewModelModule = module {
-    viewModel { MainViewModel(get()) }
+    viewModel { MainViewModel() }
 }
 
 val appModule = module {
     single { PreferenceManager.getDefaultSharedPreferences(androidContext()) }
     single { SharedPrefHelper(get()) }
     single { App.appLifeScope }
-    single { WeatherDatabase.getDatabase(androidContext()).weatherDao() }
+    single { WeatherDatabase.getDatabase(androidContext()) }
 }

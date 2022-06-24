@@ -1,7 +1,12 @@
 package com.tt.weatherapp.ui
 
 import android.app.AlarmManager
-import android.os.Looper
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.os.Bundle
+import android.os.IBinder
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -11,7 +16,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,11 +37,11 @@ import com.google.accompanist.insets.ui.BottomNavigation
 import com.google.accompanist.permissions.*
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-import com.google.android.gms.location.*
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.BaseActivity
 import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.data.local.SharedPrefHelper
+import com.tt.weatherapp.service.LocationService
 import com.tt.weatherapp.ui.daily.Daily
 import com.tt.weatherapp.ui.home.Home
 import com.tt.weatherapp.ui.hourly.Hourly
@@ -46,11 +54,28 @@ import org.koin.androidx.viewmodel.ext.android.getViewModel
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi
 class MainActivity : BaseActivity<MainViewModel>() {
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var locationRequest: LocationRequest
-    private lateinit var locationCallback: LocationCallback
-
+    private lateinit var mService: LocationService
     override fun viewModelClass() = getViewModel<MainViewModel>()
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            val binder = service as LocationService.LocalBinder
+            mService = binder.getService()
+            viewModel.getWeatherInfo(mService.database)
+            unbindService(this)
+        }
+
+        override fun onServiceDisconnected(arg0: ComponentName) {
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        Intent(this, LocationService::class.java).also { intent ->
+            bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        }
+    }
 
     @Composable
     override fun InitView() {
@@ -66,67 +91,26 @@ class MainActivity : BaseActivity<MainViewModel>() {
         }
 
         FeatureThatRequiresLocationPermission {
-            DisposableEffect(LocalLifecycleOwner.current) {
-                fusedLocationClient =
-                    LocationServices.getFusedLocationProviderClient(this@MainActivity)
-                initLocationCallBack()
-                createLocationRequest()
-
-                fusedLocationClient.lastLocation
-                    .addOnSuccessListener { location -> // Got last known location. In some rare situations this can be null.
-                        if (location != null) {
-                            viewModel.getWeatherInfo(location.latitude, location.longitude)
-                        } else {
-                            startLocationService()
-                        }
-                    }
-
-                onDispose {
-                    fusedLocationClient.removeLocationUpdates(locationCallback)
-                }
-            }
-
-            LaunchedEffect(true) {
-                while (true) {
+            LaunchedEffect(viewModel.isRefreshing) {
+                while (viewModel.isRefreshing.not()) {
                     delay(AlarmManager.INTERVAL_FIFTEEN_MINUTES)
                     forceRefreshWeather()
                 }
             }
-        }
-    }
 
-    private fun forceRefreshWeather() {
-        viewModel.refresh()
-        startLocationService()
-    }
-
-    private fun initLocationCallBack() {
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                locationResult.locations.forEach {
-                    viewModel.getWeatherInfo(it.latitude, it.longitude)
-                    return@forEach
-                }
-
-                fusedLocationClient.removeLocationUpdates(this)
+            LaunchedEffect(LocalLifecycleOwner.current) {
+                forceRefreshWeather(false)
             }
         }
     }
 
-    private fun createLocationRequest() {
-        locationRequest = LocationRequest.create().apply {
-            interval = 1000000
-            fastestInterval = 500000
-            priority = Priority.PRIORITY_HIGH_ACCURACY
+    private fun forceRefreshWeather(isForceRefresh: Boolean = true) {
+        viewModel.setRefresh(true)
+        Intent(this, LocationService::class.java).apply {
+            putExtra(Constant.IS_FORCE_REFRESH, isForceRefresh)
+        }.also {
+            startForegroundService(it)
         }
-    }
-
-    private fun startLocationService() {
-        fusedLocationClient.requestLocationUpdates(
-            locationRequest,
-            locationCallback,
-            Looper.getMainLooper()
-        )
     }
 }
 
@@ -183,7 +167,7 @@ fun MainView(viewModel: MainViewModel, refresh: () -> Unit) {
                                                 else -> Constant.Unit.IMPERIAL
                                             }
                                             sharedPrefHelper.setChosenUnit(unit)
-                                            viewModel.getWeatherInfo(null, null, true)
+                                            refresh.invoke()
                                         }
                                         modalBottomSheetState.hide()
                                     }

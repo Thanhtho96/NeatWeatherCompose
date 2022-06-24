@@ -15,24 +15,20 @@ abstract class WeatherDatabase : RoomDatabase() {
     abstract fun weatherDao(): WeatherDao
 
     companion object {
-        // Singleton prevents multiple instances of database opening at the
-        // same time.
-        @Volatile
         private var INSTANCE: WeatherDatabase? = null
-
         fun getDatabase(context: Context): WeatherDatabase {
             // if the INSTANCE is not null, then return it,
             // if it is, then create the database
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    WeatherDatabase::class.java,
-                    "weather_database"
-                ).build()
-                INSTANCE = instance
-                // return instance
-                instance
+            if (INSTANCE == null) {
+                synchronized(this) {
+                    INSTANCE = Room.databaseBuilder(
+                        context,
+                        WeatherDatabase::class.java,
+                        "weather_database"
+                    ).build()
+                }
             }
+            return INSTANCE!!
         }
     }
 }

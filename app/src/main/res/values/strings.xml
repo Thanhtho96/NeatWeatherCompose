@@ -141,6 +141,7 @@
     <string name="txt_weather_info_notification_description">Push notification about weather in current time</string>
     <string name="weather_info_channel_name">Information about weather notification</string>
     <string name="weather_info_channel_ID" translatable="false">WEATHER_INFO_NOTIFICATION</string>
-
+    <string name="weather_location_title">Weather Location Service</string>
+    <string name="weather_location_message">This will keep weather data up-to-date</string>
     <string name="updated_at">Updated at %s</string>
 </resources>

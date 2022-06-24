@@ -7,7 +7,6 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.StringRes
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
@@ -40,14 +39,13 @@ abstract class BaseActivity<M : BaseViewModel> : ComponentActivity() {
 
         setContent {
             val systemUiController = rememberSystemUiController()
-            val useDarkIcons = isSystemInDarkTheme().not()
 
             SideEffect {
                 // Update all of the system bar colors to be transparent, and use
                 // dark icons if we're in light theme
                 systemUiController.setSystemBarsColor(
                     color = Color.Transparent,
-                    darkIcons = useDarkIcons
+                    darkIcons = false
                 )
 
                 lifecycleScope.launch {
@@ -59,7 +57,7 @@ abstract class BaseActivity<M : BaseViewModel> : ComponentActivity() {
                 }
             }
 
-            NeatWeatherComposeTheme {
+            NeatWeatherComposeTheme(true) {
                 InitView()
             }
 

@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <color name="text_unit_unselect">@color/white</color>
-    <color name="home_grid">#444444</color>
-</resources>
