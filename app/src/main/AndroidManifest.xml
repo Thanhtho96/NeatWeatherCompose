@@ -19,8 +19,8 @@
         android:theme="@style/Theme.NeatWeatherCompose">
         <activity
             android:name=".ui.MainActivity"
-            android:exported="true"
-            android:process=":weatherLocationService">
+            android:launchMode="singleTask"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -31,7 +31,30 @@
         <service
             android:name=".service.LocationService"
             android:exported="false"
-            android:foregroundServiceType="location"
-            android:process=":weatherLocationService" />
+            android:foregroundServiceType="location" />
+
+        <!--        <receiver-->
+        <!--            android:name=".widget.SmallAppWidgetProvider"-->
+        <!--            android:exported="false"-->
+        <!--            android:label="Small Widget">-->
+        <!--            <intent-filter>-->
+        <!--                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />-->
+        <!--            </intent-filter>-->
+        <!--            <meta-data-->
+        <!--                android:name="android.appwidget.provider"-->
+        <!--                android:resource="@xml/small_appwidget_info" />-->
+        <!--        </receiver>-->
+
+        <!--        <receiver-->
+        <!--            android:name=".widget.MediumAppWidgetProvider"-->
+        <!--            android:exported="false"-->
+        <!--            android:label="Medium Widget">-->
+        <!--            <intent-filter>-->
+        <!--                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />-->
+        <!--            </intent-filter>-->
+        <!--            <meta-data-->
+        <!--                android:name="android.appwidget.provider"-->
+        <!--                android:resource="@xml/medium_appwidget_info" />-->
+        <!--        </receiver>-->
     </application>
 </manifest>

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "558142032683",
+    "project_id": "neat-weather",
+    "storage_bucket": "neat-weather.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:558142032683:android:d63291cee802fd2e88136e",
+        "android_client_info": {
+          "package_name": "com.tt.weatherapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "558142032683-bgvh67bkbp3kr4ph79tin1cbq4dotee3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjqyUWuK7y7bFTEYckt4CvMM777UZGAyw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "558142032683-bgvh67bkbp3kr4ph79tin1cbq4dotee3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

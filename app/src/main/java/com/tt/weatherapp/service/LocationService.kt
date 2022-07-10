@@ -15,6 +15,7 @@ import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.data.local.WeatherDatabase
 import com.tt.weatherapp.data.repositories.AppRepository
 import com.tt.weatherapp.ui.MainActivity
+import com.tt.weatherapp.utils.PermissionUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
@@ -77,6 +78,9 @@ class LocationService : Service() {
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+        val isLocationPermissionGranted = PermissionUtil.isLocationPermissionGranted(this)
+        if (isLocationPermissionGranted.not()) return START_NOT_STICKY
+
         isForceRefresh = intent.getBooleanExtra(Constant.IS_FORCE_REFRESH, true)
         startForeground(startId, notification)
         fusedLocationClient.lastLocation

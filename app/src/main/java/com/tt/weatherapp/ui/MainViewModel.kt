@@ -14,7 +14,9 @@ import com.tt.weatherapp.model.DailyTempInfo
 import com.tt.weatherapp.model.Hourly
 import com.tt.weatherapp.model.WeatherData
 import com.tt.weatherapp.utils.DateUtil
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -36,8 +38,15 @@ class MainViewModel : BaseViewModel() {
     var isRefreshing by mutableStateOf(false)
         private set
 
+    private val mIsForceRefresh = MutableSharedFlow<Boolean>(1)
+    val isForceRefresh = mIsForceRefresh.asSharedFlow()
+
     fun setRefresh(isRefreshing: Boolean) {
         this.isRefreshing = isRefreshing
+    }
+
+    fun setIsForceRefresh(isForce: Boolean) {
+        mIsForceRefresh.tryEmit(isForce)
     }
 
     fun getWeatherInfo(database: WeatherDatabase) {

@@ -29,7 +29,9 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
@@ -48,6 +50,7 @@ import com.tt.weatherapp.ui.daily.Daily
 import com.tt.weatherapp.ui.home.Home
 import com.tt.weatherapp.ui.hourly.Hourly
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.koin.androidx.compose.inject
@@ -66,6 +69,12 @@ class MainActivity : BaseActivity<MainViewModel>() {
         lifecycleScope.launch {
             bindWeatherService()
             unbindService(connection)
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.isForceRefresh.filter { it }.collect {
+                    viewModel.setIsForceRefresh(false)
+                    forceRefreshWeather()
+                }
+            }
         }
     }
 
@@ -112,7 +121,7 @@ class MainActivity : BaseActivity<MainViewModel>() {
             LaunchedEffect(viewModel.isRefreshing) {
                 while (viewModel.isRefreshing.not()) {
                     delay(AlarmManager.INTERVAL_FIFTEEN_MINUTES)
-                    forceRefreshWeather()
+                    viewModel.setIsForceRefresh(true)
                 }
             }
 
