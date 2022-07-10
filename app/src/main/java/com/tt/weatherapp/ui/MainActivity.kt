@@ -36,6 +36,7 @@ import androidx.navigation.compose.*
 import com.google.accompanist.insets.ui.BottomNavigation
 import com.google.accompanist.permissions.*
 import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.BaseActivity
@@ -77,9 +78,19 @@ class MainActivity : BaseActivity<MainViewModel>() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        unbindService(connection)
+    }
+
     @Composable
     override fun InitView() {
         SwipeRefresh(
+            indicator = { state, trigger ->
+                SwipeRefreshIndicator(state = state, refreshTriggerDistance = trigger, scale = true)
+            },
+            indicatorPadding = WindowInsets.statusBars.asPaddingValues(),
+            clipIndicatorToPadding = false,
             state = rememberSwipeRefreshState(viewModel.isRefreshing),
             onRefresh = {
                 forceRefreshWeather()
