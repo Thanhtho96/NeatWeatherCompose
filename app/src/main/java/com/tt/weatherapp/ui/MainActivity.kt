@@ -29,6 +29,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
@@ -48,6 +49,7 @@ import com.tt.weatherapp.ui.home.Home
 import com.tt.weatherapp.ui.hourly.Hourly
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.koin.androidx.compose.inject
 import org.koin.androidx.viewmodel.ext.android.getViewModel
 
@@ -57,30 +59,35 @@ import org.koin.androidx.viewmodel.ext.android.getViewModel
 class MainActivity : BaseActivity<MainViewModel>() {
     private lateinit var mService: LocationService
     override fun viewModelClass() = getViewModel<MainViewModel>()
-
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(className: ComponentName, service: IBinder) {
-            // We've bound to LocalService, cast the IBinder and get LocalService instance
-            val binder = service as LocationService.LocalBinder
-            mService = binder.getService()
-            viewModel.getWeatherInfo(mService.database)
-            unbindService(this)
-        }
-
-        override fun onServiceDisconnected(arg0: ComponentName) {
-        }
-    }
+    private lateinit var connection: ServiceConnection
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Intent(this, LocationService::class.java).also { intent ->
-            bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        lifecycleScope.launch {
+            bindWeatherService()
+            unbindService(connection)
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        unbindService(connection)
+    private suspend fun bindWeatherService() {
+        suspendCancellableCoroutine<Unit> {
+            connection = object : ServiceConnection {
+                override fun onServiceConnected(className: ComponentName, service: IBinder) {
+                    // We've bound to LocalService, cast the IBinder and get LocalService instance
+                    val binder = service as LocationService.LocalBinder
+                    mService = binder.getService()
+                    viewModel.getWeatherInfo(mService.database)
+                    it.resumeWith(Result.success(Unit))
+                }
+
+                override fun onServiceDisconnected(arg0: ComponentName) {
+                }
+            }
+
+            Intent(this, LocationService::class.java).also { intent ->
+                bindService(intent, connection, Context.BIND_AUTO_CREATE)
+            }
+        }
     }
 
     @Composable
