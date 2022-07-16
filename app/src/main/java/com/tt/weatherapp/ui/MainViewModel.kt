@@ -1,5 +1,6 @@
 package com.tt.weatherapp.ui
 
+import android.app.AlarmManager
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -9,15 +10,12 @@ import com.tt.weatherapp.R
 import com.tt.weatherapp.common.BaseViewModel
 import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.data.local.WeatherDatabase
-import com.tt.weatherapp.model.CurrentWeatherGridInfo
-import com.tt.weatherapp.model.DailyTempInfo
-import com.tt.weatherapp.model.Hourly
-import com.tt.weatherapp.model.WeatherData
+import com.tt.weatherapp.model.*
 import com.tt.weatherapp.utils.DateUtil
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -38,15 +36,29 @@ class MainViewModel : BaseViewModel() {
     var isRefreshing by mutableStateOf(false)
         private set
 
-    private val mIsForceRefresh = MutableSharedFlow<Boolean>(1)
-    val isForceRefresh = mIsForceRefresh.asSharedFlow()
+    private val mIsForceRefresh = MutableStateFlow(WeatherRequest())
+    val isForceRefresh = mIsForceRefresh.asStateFlow()
+
+    private var refreshJob: Job? = null
 
     fun setRefresh(isRefreshing: Boolean) {
         this.isRefreshing = isRefreshing
     }
 
-    fun setIsForceRefresh(isForce: Boolean) {
-        mIsForceRefresh.tryEmit(isForce)
+    init {
+        viewModelScope.launch {
+            isForceRefresh.filter { it.isRefresh.not() }.collect {
+                refreshJob?.cancelAndJoin()
+                refreshJob = launch {
+                    delay(AlarmManager.INTERVAL_FIFTEEN_MINUTES)
+                    setIsForceRefresh(isRefresh = true, isForce = true)
+                }
+            }
+        }
+    }
+
+    fun setIsForceRefresh(isRefresh: Boolean, isForce: Boolean) {
+        mIsForceRefresh.value = mIsForceRefresh.value.copy(isRefresh = isRefresh, isForce = isForce)
     }
 
     fun getWeatherInfo(database: WeatherDatabase) {

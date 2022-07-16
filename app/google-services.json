@@ -14,6 +14,43 @@
       },
       "oauth_client": [
         {
+          "client_id": "558142032683-d2derr5e9n69i700578kqg52q0lblmjk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tt.weatherapp",
+            "certificate_hash": "a91727b29c89a1131d85476c72b5cbc548d3687e"
+          }
+        },
+        {
+          "client_id": "558142032683-bgvh67bkbp3kr4ph79tin1cbq4dotee3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjqyUWuK7y7bFTEYckt4CvMM777UZGAyw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "558142032683-bgvh67bkbp3kr4ph79tin1cbq4dotee3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:558142032683:android:8d3e8a5a70f6319c88136e",
+        "android_client_info": {
+          "package_name": "com.tt.weatherapp.debug"
+        }
+      },
+      "oauth_client": [
+        {
           "client_id": "558142032683-bgvh67bkbp3kr4ph79tin1cbq4dotee3.apps.googleusercontent.com",
           "client_type": 3
         }

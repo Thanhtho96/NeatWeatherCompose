@@ -216,7 +216,7 @@ fun Home(
                         horizontal = 12.dp
                     ), horizontalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
-                    items(viewModel.hourly) { hourly ->
+                    items(viewModel.hourly.take(25)) { hourly ->
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.padding(horizontal = 5.dp)

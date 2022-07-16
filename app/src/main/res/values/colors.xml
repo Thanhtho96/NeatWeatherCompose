@@ -13,5 +13,5 @@
     <color name="background">#333333</color>
     <color name="ic_launcher_background">#FFFFFF</color>
     <color name="text_unit_unselect">@color/white</color>
-    <color name="home_grid">#444444</color>
+    <color name="home_grid">#5E444444</color>
 </resources>

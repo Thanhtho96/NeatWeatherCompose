@@ -1,6 +1,5 @@
 package com.tt.weatherapp.ui
 
-import android.app.AlarmManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -49,7 +48,6 @@ import com.tt.weatherapp.service.LocationService
 import com.tt.weatherapp.ui.daily.Daily
 import com.tt.weatherapp.ui.home.Home
 import com.tt.weatherapp.ui.hourly.Hourly
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -70,9 +68,9 @@ class MainActivity : BaseActivity<MainViewModel>() {
             bindWeatherService()
             unbindService(connection)
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.isForceRefresh.filter { it }.collect {
-                    viewModel.setIsForceRefresh(false)
-                    forceRefreshWeather()
+                viewModel.isForceRefresh.filter { it.isRefresh }.collect {
+                    viewModel.setIsForceRefresh(isRefresh = false, isForce = true)
+                    forceRefreshWeather(it.isForce)
                 }
             }
         }
@@ -118,15 +116,8 @@ class MainActivity : BaseActivity<MainViewModel>() {
         }
 
         FeatureThatRequiresLocationPermission {
-            LaunchedEffect(viewModel.isRefreshing) {
-                while (viewModel.isRefreshing.not()) {
-                    delay(AlarmManager.INTERVAL_FIFTEEN_MINUTES)
-                    viewModel.setIsForceRefresh(true)
-                }
-            }
-
             LaunchedEffect(LocalLifecycleOwner.current) {
-                forceRefreshWeather(false)
+                viewModel.setIsForceRefresh(isRefresh = true, isForce = false)
             }
         }
     }
