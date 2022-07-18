@@ -25,9 +25,9 @@ class AppRepository(
         isForceRefresh: Boolean,
         language: String = ""
     ) {
-        try {
-            val cachedWeatherData = database.weatherDao().loadWeather()
+        val cachedWeatherData = database.weatherDao().loadWeather()
 
+        try {
             if (isForceRefresh.not() && cachedWeatherData != null) {
                 val distance = 6371 *
                         acos(
@@ -89,6 +89,9 @@ class AppRepository(
                 }
             database.weatherDao().insertWeather(weatherData)
         } catch (e: Exception) {
+            cachedWeatherData?.let {
+                database.weatherDao().insertWeather(it)
+            }
         }
     }
 }

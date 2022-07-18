@@ -45,6 +45,7 @@ import com.tt.weatherapp.common.BaseActivity
 import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.data.local.SharedPrefHelper
 import com.tt.weatherapp.service.LocationService
+import com.tt.weatherapp.service.WeatherState
 import com.tt.weatherapp.ui.daily.Daily
 import com.tt.weatherapp.ui.home.Home
 import com.tt.weatherapp.ui.hourly.Hourly
@@ -58,22 +59,26 @@ import org.koin.androidx.viewmodel.ext.android.getViewModel
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi
 class MainActivity : BaseActivity<MainViewModel>() {
-    private lateinit var mService: LocationService
+    private var mService: LocationService? = null
     override fun viewModelClass() = getViewModel<MainViewModel>()
     private lateinit var connection: ServiceConnection
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         lifecycleScope.launch {
-            bindWeatherService()
-            unbindService(connection)
             repeatOnLifecycle(Lifecycle.State.STARTED) {
+                bindWeatherService()
                 viewModel.isForceRefresh.filter { it.isRefresh }.collect {
-                    viewModel.setIsForceRefresh(isRefresh = false, isForce = true)
                     forceRefreshWeather(it.isForce)
                 }
             }
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        unbindService(connection)
+        mService = null
     }
 
     private suspend fun bindWeatherService() {
@@ -83,11 +88,17 @@ class MainActivity : BaseActivity<MainViewModel>() {
                     // We've bound to LocalService, cast the IBinder and get LocalService instance
                     val binder = service as LocationService.LocalBinder
                     mService = binder.getService()
-                    viewModel.getWeatherInfo(mService.database)
+                    mService?.weatherState = object : WeatherState {
+                        override fun onSuccess() {
+                            viewModel.setIsForceRefresh(isRefresh = false, isForce = true)
+                        }
+                    }
+                    viewModel.getWeatherInfo(mService?.database)
                     it.resumeWith(Result.success(Unit))
                 }
 
                 override fun onServiceDisconnected(arg0: ComponentName) {
+                    mService = null
                 }
             }
 
@@ -124,11 +135,7 @@ class MainActivity : BaseActivity<MainViewModel>() {
 
     private fun forceRefreshWeather(isForceRefresh: Boolean = true) {
         viewModel.setRefresh(true)
-        Intent(this, LocationService::class.java).apply {
-            putExtra(Constant.IS_FORCE_REFRESH, isForceRefresh)
-        }.also {
-            startForegroundService(it)
-        }
+        mService?.getWeatherData(isForceRefresh)
     }
 }
 

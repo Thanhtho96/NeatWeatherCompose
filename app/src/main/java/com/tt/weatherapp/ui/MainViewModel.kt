@@ -61,12 +61,14 @@ class MainViewModel : BaseViewModel() {
         mIsForceRefresh.value = mIsForceRefresh.value.copy(isRefresh = isRefresh, isForce = isForce)
     }
 
-    fun getWeatherInfo(database: WeatherDatabase) {
+    fun getWeatherInfo(database: WeatherDatabase?) {
+        if (database == null) return
         viewModelScope.launch {
             database.weatherDao().getWeather()
                 .shareIn(
                     viewModelScope,
-                    SharingStarted.WhileSubscribed(5000)
+                    SharingStarted.WhileSubscribed(5000),
+                    1
                 )
                 .collect { data ->
                     setRefresh(false)

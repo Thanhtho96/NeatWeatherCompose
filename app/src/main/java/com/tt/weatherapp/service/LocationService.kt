@@ -27,6 +27,7 @@ class LocationService : Service() {
     private val appRepository by inject<AppRepository>()
     private val scope by inject<CoroutineScope>()
     val database by inject<WeatherDatabase>()
+    var weatherState: WeatherState? = null
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
@@ -80,18 +81,21 @@ class LocationService : Service() {
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         val isLocationPermissionGranted = PermissionUtil.isLocationPermissionGranted(this)
         if (isLocationPermissionGranted.not()) return START_NOT_STICKY
-
-        isForceRefresh = intent.getBooleanExtra(Constant.IS_FORCE_REFRESH, true)
         startForeground(startId, notification)
-        fusedLocationClient.lastLocation
-            .addOnSuccessListener { location -> // Got last known location. In some rare situations this can be null.
-                if (location != null) {
-                    getWeatherData(location.latitude, location.longitude)
-                } else {
-                    startLocationService()
-                }
-            }
+        getWeatherData(intent.getBooleanExtra(Constant.IS_FORCE_REFRESH, true))
         return START_STICKY
+    }
+
+    fun getWeatherData(isForceRefresh: Boolean) {
+        this.isForceRefresh = isForceRefresh
+        fusedLocationClient.lastLocation.addOnCompleteListener {
+            if (it.result != null) {
+                getWeatherData(it.result.latitude, it.result.longitude)
+            } else {
+                startLocationService()
+            }
+            weatherState?.onSuccess()
+        }
     }
 
     private fun getWeatherData(latitude: Double, longitude: Double) {
@@ -142,7 +146,16 @@ class LocationService : Service() {
         return binder
     }
 
+    override fun onUnbind(intent: Intent?): Boolean {
+        weatherState = null
+        return super.onUnbind(intent)
+    }
+
     companion object {
         private const val CHANNEL_ID = "WEATHER_LOCATION_CHANNEL"
     }
+}
+
+interface WeatherState {
+    fun onSuccess()
 }
