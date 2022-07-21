@@ -79,14 +79,14 @@ class LocationService : Service() {
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        val isLocationPermissionGranted = PermissionUtil.isLocationPermissionGranted(this)
-        if (isLocationPermissionGranted.not()) return START_NOT_STICKY
-        startForeground(startId, notification)
-        getWeatherData(intent.getBooleanExtra(Constant.IS_FORCE_REFRESH, true))
-        return START_STICKY
+        return getWeatherData(intent.getBooleanExtra(Constant.IS_FORCE_REFRESH, true)).also {
+            if (it == START_STICKY) startForeground(startId, notification)
+        }
     }
 
-    fun getWeatherData(isForceRefresh: Boolean) {
+    fun getWeatherData(isForceRefresh: Boolean): Int {
+        val isLocationPermissionGranted = PermissionUtil.isLocationPermissionGranted(this)
+        if (isLocationPermissionGranted.not()) return START_NOT_STICKY
         this.isForceRefresh = isForceRefresh
         fusedLocationClient.lastLocation.addOnCompleteListener {
             if (it.result != null) {
@@ -96,6 +96,7 @@ class LocationService : Service() {
             }
             weatherState?.onSuccess()
         }
+        return START_STICKY
     }
 
     private fun getWeatherData(latitude: Double, longitude: Double) {

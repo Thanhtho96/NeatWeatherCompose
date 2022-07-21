@@ -4,7 +4,6 @@ import android.app.AlarmManager
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.BaseViewModel
@@ -12,6 +11,7 @@ import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.data.local.WeatherDatabase
 import com.tt.weatherapp.model.*
 import com.tt.weatherapp.utils.DateUtil
+import com.tt.weatherapp.utils.WindowsUtil
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -130,7 +130,8 @@ class MainViewModel : BaseViewModel() {
 
                     val minTemp = daily.minOf { it.temp.min }.roundToInt()
                     val maxTemp = daily.maxOf { it.temp.max }.roundToInt()
-                    val eachPortion = maxOf(17.dp.value, (maxTemp - minTemp) / 5F)
+                    val eachPortion =
+                        (WindowsUtil.getScreenHeight(mApplication) / 12F) / (maxTemp - minTemp)
 
                     listDailyTempInfo = daily.map {
                         val mMaxTemp = it.temp.max.roundToInt()

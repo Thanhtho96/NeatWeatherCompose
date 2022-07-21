@@ -15,10 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,9 +25,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.*
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
@@ -63,24 +58,6 @@ class MainActivity : BaseActivity<MainViewModel>() {
     override fun viewModelClass() = getViewModel<MainViewModel>()
     private lateinit var connection: ServiceConnection
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                bindWeatherService()
-                viewModel.isForceRefresh.filter { it.isRefresh }.collect {
-                    forceRefreshWeather(it.isForce)
-                }
-            }
-        }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        unbindService(connection)
-        mService = null
-    }
-
     private suspend fun bindWeatherService() {
         suspendCancellableCoroutine<Unit> {
             connection = object : ServiceConnection {
@@ -110,6 +87,9 @@ class MainActivity : BaseActivity<MainViewModel>() {
 
     @Composable
     override fun InitView() {
+        val lifecycleOwner = LocalLifecycleOwner.current
+        val scope = rememberCoroutineScope()
+
         SwipeRefresh(
             indicator = { state, trigger ->
                 SwipeRefreshIndicator(state = state, refreshTriggerDistance = trigger, scale = true)
@@ -127,8 +107,24 @@ class MainActivity : BaseActivity<MainViewModel>() {
         }
 
         FeatureThatRequiresLocationPermission {
-            LaunchedEffect(LocalLifecycleOwner.current) {
+            LaunchedEffect(lifecycleOwner) {
                 viewModel.setIsForceRefresh(isRefresh = true, isForce = false)
+            }
+
+            DisposableEffect(lifecycleOwner) {
+                scope.launch {
+                    repeatOnLifecycle(Lifecycle.State.STARTED) {
+                        bindWeatherService()
+                        viewModel.isForceRefresh.filter { it.isRefresh }.collect {
+                            forceRefreshWeather(it.isForce)
+                        }
+                    }
+                }
+
+                onDispose {
+                    unbindService(connection)
+                    mService = null
+                }
             }
         }
     }
@@ -175,9 +171,9 @@ fun MainView(viewModel: MainViewModel, refresh: () -> Unit) {
                 ) {
                     val selectString = when (sharedPrefHelper.getChosenUnit()) {
                         Constant.Unit.METRIC -> R.string.txt_metric
-                        Constant.Unit.IMPERIAL -> R.string.txt_fahrenheit
+                        Constant.Unit.IMPERIAL -> R.string.txt_imperial
                     }
-                    listOf(R.string.txt_metric, R.string.txt_fahrenheit).forEach {
+                    listOf(R.string.txt_metric, R.string.txt_imperial).forEach {
                         Box(
                             modifier = Modifier
                                 .weight(0.5f)
