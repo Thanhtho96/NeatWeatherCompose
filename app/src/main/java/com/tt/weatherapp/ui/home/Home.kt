@@ -2,6 +2,7 @@ package com.tt.weatherapp.ui.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -19,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -43,7 +43,9 @@ import kotlin.math.roundToInt
 fun Home(
     viewModel: MainViewModel,
     showSetting: () -> Unit,
-    refresh: () -> Unit
+    refresh: () -> Unit,
+    navigateHourly: () -> Unit,
+    navigateDaily: () -> Unit
 ) {
     val res = LocalContext.current.resources
     val uiState = viewModel.weatherData ?: return
@@ -81,6 +83,7 @@ fun Home(
         }
 
         LazyColumn(
+            contentPadding = WindowInsets.navigationBars.asPaddingValues(),
             modifier = Modifier.fillMaxSize(),
         ) {
             item {
@@ -201,68 +204,84 @@ fun Home(
                     }
                 }
 
-                Text(
-                    modifier = Modifier.padding(
-                        top = 10.dp,
-                        bottom = 7.dp,
-                        start = 12.dp,
-                        end = 12.dp
-                    ),
-                    text = res.getString(R.string.txt_hourly),
-                    fontSize = 19.sp
-                )
-
-                LazyRow(
-                    contentPadding = PaddingValues(
-                        horizontal = 12.dp
-                    ), horizontalArrangement = Arrangement.spacedBy(7.dp)
-                ) {
-                    items(viewModel.hourly.take(25)) { hourly ->
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(horizontal = 5.dp)
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { navigateHourly.invoke() }) {
+                    Column {
+                        Row(
+                            Modifier.padding(
+                                top = 10.dp,
+                                bottom = 7.dp,
+                                start = 12.dp,
+                                end = 12.dp
+                            )
                         ) {
                             Text(
-                                text = stringResource(
-                                    homeWeatherUnit.currentTemp,
-                                    hourly.temp.roundToInt().toString(),
-                                ),
-                                fontSize = 17.sp
+                                modifier = Modifier.weight(1F),
+                                text = res.getString(R.string.txt_hourly),
+                                fontSize = 19.sp
                             )
-                            Spacer(modifier = Modifier.height(20.dp))
-                            val rain = if (hourly.pop != null && hourly.pop > 0) {
-                                stringResource(
-                                    R.string.txt_percentage,
-                                    (hourly.pop * 100).roundToInt(),
-                                )
-                            } else {
-                                ""
-                            }
-                            Text(
-                                text = rain,
-                                color = colorResource(id = R.color.blue),
-                                fontSize = 15.sp
-                            )
-                            Spacer(modifier = Modifier.height(20.dp))
                             Image(
-                                painter = rememberAsyncImagePainter(
-                                    ImageRequest.Builder(
-                                        LocalContext.current
-                                    ).data(
-                                        data = Constant.getWeatherIcon(hourly.weather[0].icon)
-                                    ).apply(block = fun ImageRequest.Builder.() {
-                                        crossfade(true)
-                                    }).build()
-                                ),
-                                contentDescription = null,
-                                modifier = Modifier.size(37.dp)
+                                modifier = Modifier.align(Alignment.CenterVertically),
+                                painter = painterResource(id = R.drawable.ic_arrow_right),
+                                contentDescription = null
                             )
-                            Text(
-                                text = DateUtil.format(
-                                    DateUtil.DateFormat.HOUR_MINUTE,
-                                    hourly.dt * 1000
-                                ), fontSize = 17.sp
-                            )
+                        }
+
+                        LazyRow(
+                            contentPadding = PaddingValues(
+                                horizontal = 12.dp
+                            ), horizontalArrangement = Arrangement.spacedBy(7.dp)
+                        ) {
+                            items(viewModel.hourly.take(25)) { hourly ->
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.padding(horizontal = 5.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(
+                                            homeWeatherUnit.currentTemp,
+                                            hourly.temp.roundToInt().toString(),
+                                        ),
+                                        fontSize = 17.sp
+                                    )
+                                    Spacer(modifier = Modifier.height(20.dp))
+                                    val rain = if (hourly.pop != null && hourly.pop > 0) {
+                                        stringResource(
+                                            R.string.txt_percentage,
+                                            (hourly.pop * 100).roundToInt(),
+                                        )
+                                    } else {
+                                        ""
+                                    }
+                                    Text(
+                                        text = rain,
+                                        color = colorResource(id = R.color.blue),
+                                        fontSize = 15.sp
+                                    )
+                                    Spacer(modifier = Modifier.height(20.dp))
+                                    Image(
+                                        painter = rememberAsyncImagePainter(
+                                            ImageRequest.Builder(
+                                                LocalContext.current
+                                            ).data(
+                                                data = Constant.getWeatherIcon(hourly.weather[0].icon)
+                                            ).apply(block = fun ImageRequest.Builder.() {
+                                                crossfade(true)
+                                            }).build()
+                                        ),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(37.dp)
+                                    )
+                                    Text(
+                                        text = DateUtil.format(
+                                            DateUtil.DateFormat.HOUR_MINUTE,
+                                            hourly.dt * 1000
+                                        ), fontSize = 17.sp
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -270,14 +289,25 @@ fun Home(
                 BoxWithConstraints(
                     Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 15.dp, horizontal = 12.dp)
+                        .clickable {
+                            navigateDaily.invoke()
+                        }
                 ) {
-                    Column {
-                        Text(
-                            modifier = Modifier.padding(top = 10.dp, bottom = 7.dp),
-                            text = res.getString(R.string.txt_daily),
-                            fontSize = 19.sp
-                        )
+                    Column(Modifier.padding(vertical = 15.dp, horizontal = 12.dp)) {
+                        Row {
+                            Text(
+                                modifier = Modifier
+                                    .padding(top = 10.dp, bottom = 7.dp)
+                                    .weight(1F),
+                                text = res.getString(R.string.txt_daily),
+                                fontSize = 19.sp
+                            )
+                            Image(
+                                modifier = Modifier.align(Alignment.CenterVertically),
+                                painter = painterResource(id = R.drawable.ic_arrow_right),
+                                contentDescription = null
+                            )
+                        }
 
                         Row {
                             viewModel.listDailyTempInfo.forEach {

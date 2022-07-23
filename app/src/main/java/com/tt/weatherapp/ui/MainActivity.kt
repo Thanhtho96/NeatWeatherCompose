@@ -4,10 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.os.Bundle
 import android.os.IBinder
-import androidx.annotation.DrawableRes
-import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,22 +12,26 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.*
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
-import androidx.navigation.compose.*
-import com.google.accompanist.insets.ui.BottomNavigation
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
+import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.*
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
@@ -39,6 +40,8 @@ import com.tt.weatherapp.R
 import com.tt.weatherapp.common.BaseActivity
 import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.data.local.SharedPrefHelper
+import com.tt.weatherapp.navigation.BottomNav
+import com.tt.weatherapp.navigation.HomeRoute
 import com.tt.weatherapp.service.LocationService
 import com.tt.weatherapp.service.WeatherState
 import com.tt.weatherapp.ui.daily.Daily
@@ -207,89 +210,40 @@ fun MainView(viewModel: MainViewModel, refresh: () -> Unit) {
         sheetState = modalBottomSheetState,
         sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
     ) {
-        val items = listOf(
-            BottomNav.HomeNav,
-            BottomNav.HourlyNav,
-            BottomNav.DailyNav
-        )
-
         Scaffold(
-            bottomBar = {
-                BottomNavigation(
-                    contentPadding = WindowInsets.navigationBars.asPaddingValues()
-                ) {
-                    val navBackStackEntry by navController.currentBackStackEntryAsState()
-                    val currentDestination = navBackStackEntry?.destination
-                    items.forEach { screen ->
-                        BottomNavigationItem(
-                            icon = {
-                                Icon(
-                                    painterResource(screen.icon),
-                                    contentDescription = null
-                                )
-                            },
-                            label = { Text(stringResource(id = screen.resourceId)) },
-                            selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
-                            onClick = {
-                                navController.navigate(screen.route) {
-                                    // Pop up to the start destination of the graph to
-                                    // avoid building up a large stack of destinations
-                                    // on the back stack as users select items
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    // Avoid multiple copies of the same destination when
-                                    // re-selecting the same item
-                                    launchSingleTop = true
-                                    // Restore state when re-selecting a previously selected item
-                                    restoreState = true
-                                }
-                            }
-                        )
-                    }
-                }
-            }
-        ) {
-            Box(Modifier.padding(it)) {
+            content = {
                 NavHost(navController, startDestination = BottomNav.HomeNav.route) {
                     homeGraph(
+                        navController,
                         viewModel,
                         { scope.launch { modalBottomSheetState.show() } }
                     ) { refresh.invoke() }
-                    composable(BottomNav.HourlyNav.route) { Hourly(viewModel) }
-                    composable(BottomNav.DailyNav.route) { Daily(viewModel) }
+                    composable(BottomNav.HourlyNav.route) { Hourly(navController, viewModel) }
+                    composable(BottomNav.DailyNav.route) { Daily(navController, viewModel) }
                 }
             }
-        }
+        )
     }
 }
 
 fun NavGraphBuilder.homeGraph(
+    navController: NavController,
     viewModel: MainViewModel,
     showSetting: () -> Unit,
     refresh: () -> Unit
 ) {
     navigation(startDestination = HomeRoute.Home.route, route = BottomNav.HomeNav.route) {
-        composable(HomeRoute.Home.route) { Home(viewModel, showSetting, refresh) }
+        composable(HomeRoute.Home.route) {
+            Home(
+                viewModel,
+                showSetting,
+                refresh,
+                navigateHourly = { navController.navigate(BottomNav.HourlyNav.route) },
+                navigateDaily = { navController.navigate(BottomNav.DailyNav.route) })
+        }
         composable(HomeRoute.Search.route) { }
         composable(HomeRoute.Settings.route) { }
     }
-}
-
-sealed class BottomNav(
-    val route: String,
-    @StringRes val resourceId: Int,
-    @DrawableRes val icon: Int
-) {
-    object HomeNav : BottomNav("home_route", R.string.home, R.drawable.ic_home)
-    object HourlyNav : BottomNav("hourly", R.string.hourly, R.drawable.ic_clock)
-    object DailyNav : BottomNav("daily", R.string.daily, R.drawable.ic_calendar)
-}
-
-sealed class HomeRoute(val route: String) {
-    object Home : HomeRoute("home")
-    object Search : HomeRoute("search")
-    object Settings : HomeRoute("settings")
 }
 
 @ExperimentalPermissionsApi

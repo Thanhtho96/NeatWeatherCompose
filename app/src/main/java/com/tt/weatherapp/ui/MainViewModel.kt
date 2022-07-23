@@ -33,7 +33,7 @@ class MainViewModel : BaseViewModel() {
     var listDailyTempInfo by mutableStateOf<List<DailyTempInfo>>(emptyList())
         private set
 
-    var isRefreshing by mutableStateOf(false)
+    var isRefreshing by mutableStateOf(true)
         private set
 
     private val mIsForceRefresh = MutableStateFlow(WeatherRequest())
@@ -67,8 +67,7 @@ class MainViewModel : BaseViewModel() {
             database.weatherDao().getWeather()
                 .shareIn(
                     viewModelScope,
-                    SharingStarted.WhileSubscribed(5000),
-                    1
+                    SharingStarted.WhileSubscribed(5000)
                 )
                 .collect { data ->
                     setRefresh(false)

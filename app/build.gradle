@@ -32,8 +32,8 @@ android {
         applicationId "com.tt.weatherapp"
         minSdk 21
         targetSdk 32
-        versionCode 12
-        versionName "1.0.2"
+        versionCode 13
+        versionName "1.0.3"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -132,8 +132,6 @@ dependencies {
     implementation "com.google.android.gms:play-services-location:20.0.0"
 
     def accompanist = '0.24.11-rc'
-    implementation "com.google.accompanist:accompanist-insets:$accompanist"
-    implementation "com.google.accompanist:accompanist-insets-ui:$accompanist"
     implementation "com.google.accompanist:accompanist-systemuicontroller:$accompanist"
     implementation "com.google.accompanist:accompanist-permissions:$accompanist"
     implementation "com.google.accompanist:accompanist-flowlayout:$accompanist"

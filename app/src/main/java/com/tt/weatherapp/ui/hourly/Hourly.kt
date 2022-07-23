@@ -7,8 +7,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,6 +24,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.tt.weatherapp.R
@@ -33,7 +38,7 @@ import kotlin.math.roundToInt
 
 @ExperimentalFoundationApi
 @Composable
-fun Hourly(viewModel: MainViewModel) {
+fun Hourly(navController: NavController, viewModel: MainViewModel) {
     val res = LocalContext.current.resources
     val uiState = viewModel.hourly.groupBy { it.dtHeader }
     val homeWeatherUnit = HomeWeatherUnit(viewModel.weatherData ?: return)
@@ -46,20 +51,32 @@ fun Hourly(viewModel: MainViewModel) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(PaddingValues(vertical = 7.dp))
-                .defaultMinSize(minHeight = dimensionResource(id = R.dimen.actionBarSize))
-                .align(Alignment.CenterHorizontally),
-            contentAlignment = Alignment.Center
+                .padding(PaddingValues(vertical = 7.dp, horizontal = 12.dp))
+                .defaultMinSize(minHeight = dimensionResource(id = R.dimen.actionBarSize)),
+            contentAlignment = Alignment.CenterStart,
         ) {
+            IconButton(modifier = Modifier.size(24.dp),
+                onClick = { navController.popBackStack() }) {
+                Icon(
+                    Icons.Default.ArrowBack,
+                    null
+                )
+            }
             Text(
+                modifier = Modifier.align(Alignment.Center),
                 text = stringResource(id = R.string.txt_next_hours),
-                fontSize = dimensionResource(id = R.dimen.header).value.sp
+                fontSize = dimensionResource(id = R.dimen.header).value.sp,
             )
         }
 
         LazyColumn(
-            Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(start = 10.dp, end = 10.dp, bottom = 10.dp),
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp),
+            contentPadding = PaddingValues(
+                bottom = WindowInsets.navigationBars.asPaddingValues()
+                    .calculateBottomPadding() + 17.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             uiState.forEach { (day, dayHourly) ->
