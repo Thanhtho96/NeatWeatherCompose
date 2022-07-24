@@ -1,14 +1,19 @@
 package com.tt.weatherapp.data.local
 
 import android.content.Context
-import androidx.room.Database
-import androidx.room.Room
-import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
-import com.tt.weatherapp.data.dao.WeatherDao
-import com.tt.weatherapp.model.WeatherData
+import androidx.room.*
+import com.tt.weatherapp.model.Location
 
-@Database(entities = [WeatherData::class], version = 1, exportSchema = false)
+@Database(
+    entities = [
+        Location::class
+    ],
+    version = 2,
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2, spec = DatabaseMigrations.Schema1to2::class)
+    ],
+    exportSchema = true
+)
 @TypeConverters(Converters::class)
 abstract class WeatherDatabase : RoomDatabase() {
 

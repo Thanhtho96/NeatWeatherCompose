@@ -19,9 +19,9 @@
         android:theme="@style/Theme.NeatWeatherCompose">
         <activity
             android:name=".ui.MainActivity"
+            android:exported="true"
             android:launchMode="singleTask"
-            android:screenOrientation="sensorPortrait"
-            android:exported="true">
+            android:screenOrientation="sensorPortrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -57,5 +57,12 @@
         <!--                android:name="android.appwidget.provider"-->
         <!--                android:resource="@xml/medium_appwidget_info" />-->
         <!--        </receiver>-->
+
+        <meta-data
+            android:name="com.here.sdk.access_key_id"
+            android:value="Rfw2SKb_URpfhSeIXfpN0g" />
+        <meta-data
+            android:name="com.here.sdk.access_key_secret"
+            android:value="-WdjwtZKGAJei0zsbk_nvhFlJh6Yq_5qMUnbTZlOE8ZdF-QSsCpEWCWX5cS2pQC3fZrezna-Z1icbBQfIaSbdw" />
     </application>
 </manifest>

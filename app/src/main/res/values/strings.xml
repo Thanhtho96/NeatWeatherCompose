@@ -37,7 +37,7 @@
     <string name="txt_wind_speed_meter_per_sec" translatable="false">%s m/s</string>
     <string name="txt_wind_speed_imperial_per_hour">%s miles/h</string>
 
-    <string name="txt_description_meter">%s. High %s°C. %s</string>
+    <string name="txt_description_meter">%s. %s</string>
 
     <string name="txt_fahrenheit_temp_and_feel_like">%s°F - Feels Like: %s°F</string>
 
@@ -115,7 +115,7 @@
     <string name="txt_tomorrow">Tomorrow</string>
     <string name="txt_next_days">Next Days</string>
     <string name="txt_search_place">Search place</string>
-    <string name="txt_description_imperial">%s. High %s\°F. %s</string>
+    <string name="txt_description_imperial">%s. %s</string>
     <string name="txt_celsius_temp_and_feel_like">%s\°C - Feels Like: %s\°C</string>
     <string name="txt_current_weather">Current Weather</string>
     <string name="txt_history">History</string>
@@ -145,4 +145,8 @@
     <string name="weather_location_title">Weather Location Service</string>
     <string name="weather_location_message">This will keep weather data up-to-date</string>
     <string name="updated_at">Updated at %s</string>
+    <string name="enter_location">Enter the location…</string>
+    <string name="search_place_error">Can\'t found any location with this name</string>
+    <string name="search_engine_fail">"Something went wrong with our search engine. Let's try again later"</string>
+    <string name="null_face">-_-</string>
 </resources>

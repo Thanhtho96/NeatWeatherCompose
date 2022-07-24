@@ -5,7 +5,7 @@ import com.tt.weatherapp.model.WeatherData
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-interface ApiService {
+interface RetrofitNiaNetworkApi {
     companion object {
         private const val APP_ID = "appid"
         private const val EXCLUDE = "exclude"
@@ -16,7 +16,7 @@ interface ApiService {
         private const val UNITS = "units"
     }
 
-    @GET("onecall")
+    @GET("data/2.5/onecall")
     suspend fun getWeatherByYourLocation(
         @Query(LAT) latitude: Double,
         @Query(LON) longitude: Double,

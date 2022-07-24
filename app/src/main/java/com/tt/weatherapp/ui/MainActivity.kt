@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,7 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,13 +26,12 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.navigation
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.*
 import com.google.accompanist.permissions.*
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
@@ -40,13 +40,16 @@ import com.tt.weatherapp.R
 import com.tt.weatherapp.common.BaseActivity
 import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.data.local.SharedPrefHelper
+import com.tt.weatherapp.model.LocationSuggestion
 import com.tt.weatherapp.navigation.BottomNav
 import com.tt.weatherapp.navigation.HomeRoute
 import com.tt.weatherapp.service.LocationService
 import com.tt.weatherapp.service.WeatherState
 import com.tt.weatherapp.ui.daily.Daily
 import com.tt.weatherapp.ui.home.Home
+import com.tt.weatherapp.ui.home.SearchPlace
 import com.tt.weatherapp.ui.hourly.Hourly
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -73,7 +76,7 @@ class MainActivity : BaseActivity<MainViewModel>() {
                             viewModel.setIsForceRefresh(isRefresh = false, isForce = true)
                         }
                     }
-                    viewModel.getWeatherInfo(mService?.database)
+                    viewModel.getWeatherInfo(mService?.weatherDao)
                     it.resumeWith(Result.success(Unit))
                 }
 
@@ -92,11 +95,31 @@ class MainActivity : BaseActivity<MainViewModel>() {
     override fun InitView() {
         val lifecycleOwner = LocalLifecycleOwner.current
         val scope = rememberCoroutineScope()
+        val scaffoldState = rememberScaffoldState()
+        val sharedPrefHelper by inject<SharedPrefHelper>()
+        val navController = rememberNavController()
+        val modalBottomSheetState =
+            rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentRoute = navBackStackEntry?.destination?.route
+
+        BackHandler(scaffoldState.drawerState.isOpen || modalBottomSheetState.isVisible) {
+            scope.launch {
+                if (modalBottomSheetState.isVisible) {
+                    modalBottomSheetState.hide()
+                    return@launch
+                }
+                scaffoldState.drawerState.apply {
+                    if (isOpen) close()
+                }
+            }
+        }
 
         SwipeRefresh(
             indicator = { state, trigger ->
                 SwipeRefreshIndicator(state = state, refreshTriggerDistance = trigger, scale = true)
             },
+            swipeEnabled = scaffoldState.drawerState.isClosed && currentRoute != HomeRoute.Search.route,
             indicatorPadding = WindowInsets.statusBars.asPaddingValues(),
             clipIndicatorToPadding = false,
             state = rememberSwipeRefreshState(viewModel.isRefreshing),
@@ -104,17 +127,29 @@ class MainActivity : BaseActivity<MainViewModel>() {
                 forceRefreshWeather()
             },
         ) {
-            MainView(viewModel) {
-                forceRefreshWeather()
-            }
+            MainView(
+                scaffoldState,
+                sharedPrefHelper,
+                viewModel,
+                scope,
+                modalBottomSheetState,
+                navController,
+                refresh = { forceRefreshWeather() },
+                onClickSuggestion = { selectSuggestLocation(it) }
+            )
         }
 
         FeatureThatRequiresLocationPermission {
-            LaunchedEffect(lifecycleOwner) {
-                viewModel.setIsForceRefresh(isRefresh = true, isForce = false)
-            }
-
             DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        viewModel.setIsForceRefresh(isRefresh = true, isForce = false)
+                    }
+                }
+
+                // Add the observer to the lifecycle
+                lifecycleOwner.lifecycle.addObserver(observer)
+
                 scope.launch {
                     repeatOnLifecycle(Lifecycle.State.STARTED) {
                         bindWeatherService()
@@ -125,6 +160,7 @@ class MainActivity : BaseActivity<MainViewModel>() {
                 }
 
                 onDispose {
+                    lifecycleOwner.lifecycle.removeObserver(observer)
                     unbindService(connection)
                     mService = null
                 }
@@ -136,18 +172,26 @@ class MainActivity : BaseActivity<MainViewModel>() {
         viewModel.setRefresh(true)
         mService?.getWeatherData(isForceRefresh)
     }
+
+    private fun selectSuggestLocation(locationSuggestion: LocationSuggestion) {
+        viewModel.setRefresh(true)
+        mService?.chooseSuggestLocation(locationSuggestion)
+    }
 }
 
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi
 @Composable
-fun MainView(viewModel: MainViewModel, refresh: () -> Unit) {
-    val sharedPrefHelper by inject<SharedPrefHelper>()
-    val navController = rememberNavController()
-    val modalBottomSheetState =
-        rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
-    val scope = rememberCoroutineScope()
-
+fun MainView(
+    scaffoldState: ScaffoldState,
+    sharedPrefHelper: SharedPrefHelper,
+    viewModel: MainViewModel,
+    scope: CoroutineScope,
+    modalBottomSheetState: ModalBottomSheetState,
+    navController: NavHostController,
+    refresh: () -> Unit,
+    onClickSuggestion: (LocationSuggestion) -> Unit
+) {
     ModalBottomSheetLayout(
         sheetContent = {
             Column(
@@ -214,10 +258,13 @@ fun MainView(viewModel: MainViewModel, refresh: () -> Unit) {
             content = {
                 NavHost(navController, startDestination = BottomNav.HomeNav.route) {
                     homeGraph(
+                        scaffoldState,
                         navController,
                         viewModel,
-                        { scope.launch { modalBottomSheetState.show() } }
-                    ) { refresh.invoke() }
+                        showSetting = { scope.launch { modalBottomSheetState.show() } },
+                        refresh = { refresh.invoke() },
+                        onClickSuggestion = { onClickSuggestion.invoke(it) }
+                    )
                     composable(BottomNav.HourlyNav.route) { Hourly(navController, viewModel) }
                     composable(BottomNav.DailyNav.route) { Daily(navController, viewModel) }
                 }
@@ -226,22 +273,36 @@ fun MainView(viewModel: MainViewModel, refresh: () -> Unit) {
     }
 }
 
+@ExperimentalFoundationApi
 fun NavGraphBuilder.homeGraph(
+    scaffoldState: ScaffoldState,
     navController: NavController,
     viewModel: MainViewModel,
     showSetting: () -> Unit,
-    refresh: () -> Unit
+    refresh: () -> Unit,
+    onClickSuggestion: (LocationSuggestion) -> Unit
 ) {
     navigation(startDestination = HomeRoute.Home.route, route = BottomNav.HomeNav.route) {
         composable(HomeRoute.Home.route) {
             Home(
+                scaffoldState,
                 viewModel,
                 showSetting,
                 refresh,
                 navigateHourly = { navController.navigate(BottomNav.HourlyNav.route) },
-                navigateDaily = { navController.navigate(BottomNav.DailyNav.route) })
+                navigateDaily = { navController.navigate(BottomNav.DailyNav.route) },
+                navigateAddPlace = { navController.navigate(HomeRoute.Search.route) }
+            )
         }
-        composable(HomeRoute.Search.route) { }
+        composable(HomeRoute.Search.route) {
+            SearchPlace(
+                navController,
+                viewModel,
+                onClickSuggestion = { locationSuggestion ->
+                    onClickSuggestion(locationSuggestion)
+                }
+            )
+        }
         composable(HomeRoute.Settings.route) { }
     }
 }

@@ -34,8 +34,8 @@ import kotlin.math.roundToInt
 @Composable
 fun Daily(navController: NavController, viewModel: MainViewModel) {
     val res = LocalContext.current.resources
-    val uiState = viewModel.weatherData
-    val homeWeatherUnit = HomeWeatherUnit(viewModel.weatherData ?: return)
+    val uiState = viewModel.locationData?.weatherData
+    val homeWeatherUnit = HomeWeatherUnit(viewModel.locationData?.weatherData ?: return)
 
     Column(
         modifier = Modifier
@@ -59,7 +59,7 @@ fun Daily(navController: NavController, viewModel: MainViewModel) {
             Text(
                 modifier = Modifier.align(Alignment.Center),
                 text = stringResource(id = R.string.txt_next_days),
-                fontSize = dimensionResource(id = R.dimen.header).value.sp
+                fontSize = 23.sp
             )
         }
 

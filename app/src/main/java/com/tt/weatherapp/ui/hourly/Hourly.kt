@@ -41,7 +41,7 @@ import kotlin.math.roundToInt
 fun Hourly(navController: NavController, viewModel: MainViewModel) {
     val res = LocalContext.current.resources
     val uiState = viewModel.hourly.groupBy { it.dtHeader }
-    val homeWeatherUnit = HomeWeatherUnit(viewModel.weatherData ?: return)
+    val homeWeatherUnit = HomeWeatherUnit(viewModel.locationData?.weatherData ?: return)
 
     Column(
         modifier = Modifier
@@ -65,7 +65,7 @@ fun Hourly(navController: NavController, viewModel: MainViewModel) {
             Text(
                 modifier = Modifier.align(Alignment.Center),
                 text = stringResource(id = R.string.txt_next_hours),
-                fontSize = dimensionResource(id = R.dimen.header).value.sp,
+                fontSize = 23.sp,
             )
         }
 

@@ -12,13 +12,17 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.android.gms.location.*
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.Constant
-import com.tt.weatherapp.data.local.WeatherDatabase
+import com.tt.weatherapp.data.local.WeatherDao
 import com.tt.weatherapp.data.repositories.AppRepository
+import com.tt.weatherapp.model.LocationSuggestion
 import com.tt.weatherapp.ui.MainActivity
 import com.tt.weatherapp.utils.PermissionUtil
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
+import org.koin.core.qualifier.named
 
 @ExperimentalPermissionsApi
 @ExperimentalFoundationApi
@@ -26,12 +30,14 @@ import org.koin.android.ext.android.inject
 class LocationService : Service() {
     private val appRepository by inject<AppRepository>()
     private val scope by inject<CoroutineScope>()
-    val database by inject<WeatherDatabase>()
+    val weatherDao by inject<WeatherDao>()
+    private val ioDispatcher by inject<CoroutineDispatcher>(named(Constant.Dispatcher.IO))
     var weatherState: WeatherState? = null
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
     private var isForceRefresh = true
+    private var getWeatherJob: Job? = null
 
     private val binder = LocalBinder()
 
@@ -99,9 +105,17 @@ class LocationService : Service() {
         return START_STICKY
     }
 
+    fun chooseSuggestLocation(locationSuggestion: LocationSuggestion) {
+        scope.launch(ioDispatcher) {
+            appRepository.addSearchLocation(locationSuggestion, "")
+            stopSelf()
+        }
+    }
+
     private fun getWeatherData(latitude: Double, longitude: Double) {
-        scope.launch {
-            appRepository.getWeatherOneCall(latitude, longitude, isForceRefresh)
+        if (getWeatherJob?.isActive == true) return
+        getWeatherJob = scope.launch(ioDispatcher) {
+            appRepository.getWeatherData(latitude, longitude, isForceRefresh, "")
             stopSelf()
         }
     }

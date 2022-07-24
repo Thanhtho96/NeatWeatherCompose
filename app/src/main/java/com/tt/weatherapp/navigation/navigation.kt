@@ -2,8 +2,8 @@ package com.tt.weatherapp.navigation
 
 sealed class BottomNav(val route: String) {
     object HomeNav : BottomNav("home_route")
-    object HourlyNav : BottomNav("hourly")
-    object DailyNav : BottomNav("daily")
+    object HourlyNav : BottomNav("hourly_route")
+    object DailyNav : BottomNav("daily_route")
 }
 
 sealed class HomeRoute(val route: String) {
