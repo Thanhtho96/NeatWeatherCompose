@@ -17,7 +17,6 @@ import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.data.local.WeatherDao
 import com.tt.weatherapp.model.*
 import com.tt.weatherapp.utils.DateUtil
-import com.tt.weatherapp.utils.StringUtils
 import com.tt.weatherapp.utils.WindowsUtil
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -25,8 +24,9 @@ import kotlin.math.roundToInt
 
 class MainViewModel(
     private val searchEngine: SearchEngine?,
+    private val weatherDao: WeatherDao,
     private val ioDispatcher: CoroutineDispatcher,
-    private val weatherDao: WeatherDao
+    private val mainDispatcher: CoroutineDispatcher
 ) : BaseViewModel() {
 
     var locationData by mutableStateOf<Location?>(null)
@@ -63,7 +63,7 @@ class MainViewModel(
     private val searchOptions by lazy {
         SearchOptions().apply {
             languageCode = LanguageCode.EN_US
-            maxItems = 10
+            maxItems = 30
         }
     }
 
@@ -93,19 +93,22 @@ class MainViewModel(
             return
         }
 
-        val handler = CoroutineExceptionHandler { _, exception ->
-            Toast.makeText(mApplication, exception.message, Toast.LENGTH_SHORT).show()
-        }
-
-        viewModelScope.launch(handler + ioDispatcher) {
+        viewModelScope.launch(ioDispatcher) {
             searchPlaceJob?.cancelAndJoin()
             searchPlaceJob = launch {
-                listSuggestion = suggestPlace(keyword)
+                try {
+                    listSuggestion = searchPlace(keyword)
+                } catch (e: RuntimeException) {
+                    listSuggestion = listOf()
+                    withContext(mainDispatcher) {
+                        Toast.makeText(mApplication, e.message, Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
         }
     }
 
-    private suspend fun suggestPlace(keyword: String) =
+    private suspend fun searchPlace(keyword: String) =
         suspendCancellableCoroutine<List<LocationSuggestion>> { continuation ->
             if (searchEngine == null) {
                 continuation.resumeWith(
@@ -115,7 +118,7 @@ class MainViewModel(
                 )
                 return@suspendCancellableCoroutine
             }
-            searchEngine.suggest(
+            searchEngine.search(
                 TextQuery(keyword, TextQuery.Area(GeoCoordinates(latitude, longitude))),
                 searchOptions,
             ) { searchError, list ->
@@ -125,24 +128,32 @@ class MainViewModel(
                             RuntimeException(mApplication.getString(R.string.search_place_error))
                         )
                     )
-                    return@suggest
+                    return@search
                 }
+
                 val listResult =
-                    list.filter { it.place != null && it?.place?.geoCoordinates != null }
-                        .filter { location -> location.title !in listLocation.map { it.name } }
+                    list.asSequence().filter { it != null && it.geoCoordinates != null }
+                        .filter { it.address.city.isNotBlank() && it.address.country.isNotBlank() }
+                        .distinctBy { "${it.address.city}, ${it.address.country}" }
+                        .filter { location -> "${location.address.city}, ${location.address.country}" !in listLocation.map { it.name } }
                         .map {
                             LocationSuggestion(
-                                it.title,
-                                StringUtils.stripLocationDescriptionPrefix(
-                                    it.title,
-                                    it.place!!.address.addressText
-                                ),
-                                it.place!!.geoCoordinates!!.latitude,
-                                it.place!!.geoCoordinates!!.longitude
+                                it.address.city,
+                                it.address.country,
+                                it.geoCoordinates!!.latitude,
+                                it.geoCoordinates!!.longitude
                             )
-                        }
+                        }.toList()
 
-                continuation.resumeWith(Result.success(listResult))
+                if (listResult.isEmpty()) {
+                    continuation.resumeWith(
+                        Result.failure(
+                            RuntimeException(mApplication.getString(R.string.search_place_error))
+                        )
+                    )
+                } else {
+                    continuation.resumeWith(Result.success(listResult))
+                }
             }
         }
 
@@ -155,8 +166,8 @@ class MainViewModel(
                     SharingStarted.WhileSubscribed(5000)
                 )
                 .collect { location ->
-                    setRefresh(false)
                     val data = location?.weatherData ?: return@collect
+                    setRefresh(false)
                     locationData = location
 
                     val current = data.current

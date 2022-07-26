@@ -52,6 +52,45 @@ class AppRepositoryImpl(
                 }
             }
 
+            val address = try {
+                Geocoder(context, Locale.getDefault()).getFromLocation(
+                    latitude,
+                    longitude,
+                    1
+                )
+            } catch (e: IOException) {
+                emptyList()
+            }
+
+            val builder = StringBuilder()
+            val subAdminArea = address.firstOrNull()?.subAdminArea
+            val adminArea = address.firstOrNull()?.adminArea
+            subAdminArea?.let {
+                builder.append(it)
+                builder.append(", ")
+            }
+            adminArea?.let {
+                builder.append(it)
+                builder.append(", ")
+            }
+
+            val locationName = if (builder.isNotEmpty()) {
+                builder.substring(0, builder.length - 2)
+            } else {
+                ""
+            }
+
+            if (cachedLocation == null) {
+                val draftLocation = Location(
+                    latitude,
+                    longitude,
+                    locationName,
+                    true,
+                    null
+                )
+                weatherDao.insertLocation(draftLocation)
+            }
+
             val weatherData =
                 apiService.getWeatherByCoordinate(
                     latitude,
@@ -64,34 +103,6 @@ class AppRepositoryImpl(
 
             when (cachedLocation?.type ?: LocationType.GPS) {
                 LocationType.GPS -> {
-                    val address = try {
-                        Geocoder(context, Locale.getDefault()).getFromLocation(
-                            latitude,
-                            longitude,
-                            1
-                        )
-                    } catch (e: IOException) {
-                        emptyList()
-                    }
-
-                    val builder = StringBuilder()
-                    val subAdminArea = address.firstOrNull()?.subAdminArea
-                    val adminArea = address.firstOrNull()?.adminArea
-                    subAdminArea?.let {
-                        builder.append(it)
-                        builder.append(", ")
-                    }
-                    adminArea?.let {
-                        builder.append(it)
-                        builder.append(", ")
-                    }
-
-                    val locationName = if (builder.isNotEmpty()) {
-                        builder.substring(0, builder.length - 2)
-                    } else {
-                        ""
-                    }
-
                     weatherDao.updateGPSLocation(
                         latitude,
                         longitude,
@@ -128,7 +139,7 @@ class AppRepositoryImpl(
         val draftLocation = Location(
             locationSuggestion.lat,
             locationSuggestion.lon,
-            locationSuggestion.title,
+            "${locationSuggestion.title}, ${locationSuggestion.detail}",
             false,
             null,
             LocationType.SEARCH

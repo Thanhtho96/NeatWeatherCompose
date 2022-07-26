@@ -174,7 +174,6 @@ class MainActivity : BaseActivity<MainViewModel>() {
     }
 
     private fun selectSuggestLocation(locationSuggestion: LocationSuggestion) {
-        viewModel.setRefresh(true)
         mService?.chooseSuggestLocation(locationSuggestion)
     }
 }

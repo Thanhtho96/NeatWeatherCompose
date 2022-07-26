@@ -1,6 +1,5 @@
 package com.tt.weatherapp.ui.home
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -26,7 +26,6 @@ import com.tt.weatherapp.model.LocationSuggestion
 import com.tt.weatherapp.ui.MainViewModel
 import kotlinx.coroutines.delay
 
-@ExperimentalFoundationApi
 @Composable
 fun SearchPlace(
     navController: NavController,
@@ -43,6 +42,12 @@ fun SearchPlace(
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
+    }
+
+    DisposableEffect(LocalLifecycleOwner.current) {
+        onDispose {
+            viewModel.searchPlaceWithKeyword("")
+        }
     }
 
     Column(
@@ -73,31 +78,26 @@ fun SearchPlace(
             modifier = Modifier
                 .focusRequester(focusRequester)
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp)
+                .padding(12.dp)
         )
 
-        LazyColumn(
-            modifier = Modifier.padding(top = 7.dp),
-            contentPadding = PaddingValues(bottom = 12.dp)
-        ) {
-            items(viewModel.listSuggestion, key = { it.title + it.detail }) {
+        LazyColumn(contentPadding = PaddingValues(bottom = 12.dp)) {
+            items(viewModel.listSuggestion) {
                 Column(
-                    Modifier
-                        .animateItemPlacement()
-                        .clickable {
-                            navController.popBackStack()
-                            onClickSuggestion.invoke(it)
-                        }) {
-                    Spacer(modifier = Modifier.height(9.dp))
+                    Modifier.clickable {
+                        navController.popBackStack()
+                        onClickSuggestion.invoke(it)
+                    }) {
+                    Spacer(modifier = Modifier.height(10.dp))
                     Text(
                         modifier = Modifier.padding(start = 12.dp),
                         text = it.title,
-                        fontSize = 16.sp,
+                        fontSize = 17.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         fontWeight = FontWeight.Bold
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         modifier = Modifier.padding(start = 12.dp),
                         text = it.detail,
@@ -106,7 +106,7 @@ fun SearchPlace(
                         overflow = TextOverflow.Ellipsis,
                         fontWeight = FontWeight.Light
                     )
-                    Spacer(modifier = Modifier.height(13.dp))
+                    Spacer(modifier = Modifier.height(15.dp))
                     Divider()
                 }
             }

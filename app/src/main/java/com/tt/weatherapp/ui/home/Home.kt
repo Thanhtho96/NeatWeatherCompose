@@ -449,130 +449,134 @@ private fun DrawerContent(
     res: Resources,
     homeWeatherUnit: HomeWeatherUnit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .defaultMinSize(minHeight = dimensionResource(id = R.dimen.actionBarSize))
-            .padding(horizontal = 17.dp)
-            .statusBarsPadding(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.End)
-    ) {
-        IconButton(modifier = Modifier.size(24.dp),
-            onClick = { navigateAddPlace.invoke() }) {
-            Icon(
-                Icons.Default.Add,
-                null
-            )
-        }
-        IconButton(modifier = Modifier.size(24.dp),
-            onClick = { showSetting.invoke() }) {
-            Icon(
-                Icons.Default.Settings,
-                null
-            )
-        }
-    }
-    Spacer(modifier = Modifier.height(12.dp))
-    LazyColumn(contentPadding = WindowInsets.navigationBars.asPaddingValues()) {
-        items(
-            viewModel.listLocation,
-            key = { it.lat + it.lon + it.type.ordinal }) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .animateItemPlacement()
-            ) {
+    Column(Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.weight(1F),
+            contentPadding = WindowInsets.statusBars.asPaddingValues()
+        ) {
+            item {
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+            items(
+                viewModel.listLocation,
+                key = { it.lat + it.lon + it.type.ordinal }) {
                 Column(
                     Modifier
                         .fillMaxWidth()
-                        .padding(start = 12.dp, end = 17.dp)
+                        .animateItemPlacement()
                 ) {
-                    Spacer(modifier = Modifier.height(9.dp))
-                    Row(
-                        modifier = Modifier
+                    Column(
+                        Modifier
                             .fillMaxWidth()
-                            .padding(top = 7.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(start = 12.dp, end = 17.dp)
                     ) {
-                        Text(
-                            modifier = Modifier.weight(1F),
-                            fontSize = 17.sp,
-                            overflow = TextOverflow.Ellipsis,
-                            text = it.name
-                        )
-                        if (it.type == LocationType.GPS) {
-                            Icon(
-                                Icons.Default.LocationOn,
-                                null,
-                                Modifier.size(24.dp)
+                        Spacer(modifier = Modifier.height(9.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                modifier = Modifier.weight(1F),
+                                fontSize = 17.sp,
+                                overflow = TextOverflow.Ellipsis,
+                                text = it.name
                             )
-                        } else {
-                            Spacer(modifier = Modifier.size(24.dp))
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 7.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Image(
-                            painter = rememberAsyncImagePainter(
-                                ImageRequest.Builder(LocalContext.current)
-                                    .data(
-                                        data = Constant.getWeatherIcon(current.weather[0].icon)
-                                    )
-                                    .apply(block = fun ImageRequest.Builder.() {
-                                        crossfade(true)
-                                    }).build()
-                            ),
-                            contentDescription = null,
-                            modifier = Modifier.size(37.dp)
-                        )
-
-                        Text(text = current.weather[0].main)
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        val temp = (
-                                it.weatherData?.current?.temp?.roundToInt()
-                                    ?: res.getString(R.string.null_face)
-                                ).toString()
-
-                        Text(
-                            text = res.getString(
-                                homeWeatherUnit.currentTemp,
-                                temp
-                            ),
-                            fontSize = 47.sp,
-                        )
-                        if (it.type != LocationType.GPS) {
-                            IconButton(modifier = Modifier
-                                .size(24.dp)
-                                .align(Alignment.CenterVertically),
-                                onClick = { viewModel.deleteLocation(it) }) {
+                            if (it.type == LocationType.GPS) {
                                 Icon(
-                                    Icons.Default.Delete,
+                                    Icons.Default.LocationOn,
                                     null,
-                                    tint = colorResource(id = R.color.yellow)
+                                    Modifier.size(24.dp)
                                 )
+                            } else {
+                                Spacer(modifier = Modifier.size(24.dp))
                             }
                         }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Image(
+                                painter = rememberAsyncImagePainter(
+                                    ImageRequest.Builder(LocalContext.current)
+                                        .data(
+                                            data = Constant.getWeatherIcon(current.weather[0].icon)
+                                        )
+                                        .apply(block = fun ImageRequest.Builder.() {
+                                            crossfade(true)
+                                        }).build()
+                                ),
+                                contentDescription = null,
+                                modifier = Modifier.size(37.dp)
+                            )
+
+                            Text(text = current.weather[0].main)
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            val temp = (
+                                    it.weatherData?.current?.temp?.roundToInt()
+                                        ?: res.getString(R.string.null_face)
+                                    ).toString()
+
+                            Text(
+                                text = res.getString(
+                                    homeWeatherUnit.currentTemp,
+                                    temp
+                                ),
+                                fontSize = 47.sp,
+                            )
+                            if (it.type != LocationType.GPS) {
+                                IconButton(modifier = Modifier
+                                    .size(24.dp)
+                                    .align(Alignment.CenterVertically),
+                                    onClick = { viewModel.deleteLocation(it) }) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        null,
+                                        tint = colorResource(id = R.color.yellow)
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(13.dp))
                     }
-                    Spacer(modifier = Modifier.height(13.dp))
+                    Divider()
                 }
-                Divider()
             }
         }
-        item {
-            Spacer(modifier = Modifier.height(17.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = dimensionResource(id = R.dimen.actionBarSize))
+                .padding(end = 27.dp, top = 20.dp, bottom = 20.dp)
+                .navigationBarsPadding(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(27.dp, Alignment.End)
+        ) {
+            IconButton(modifier = Modifier.size(24.dp),
+                onClick = { navigateAddPlace.invoke() }) {
+                Icon(
+                    Icons.Default.Add,
+                    null
+                )
+            }
+            IconButton(modifier = Modifier.size(24.dp),
+                onClick = { showSetting.invoke() }) {
+                Icon(
+                    Icons.Default.Settings,
+                    null
+                )
+            }
         }
     }
 }

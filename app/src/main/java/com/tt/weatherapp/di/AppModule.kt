@@ -14,7 +14,14 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 val viewModelModule = module {
-    viewModel { MainViewModel(get(), get(named(Dispatcher.IO)), get()) }
+    viewModel {
+        MainViewModel(
+            get(),
+            get(),
+            get(named(Dispatcher.IO)),
+            get(named(Dispatcher.MAIN))
+        )
+    }
 }
 
 val appModule = module {
