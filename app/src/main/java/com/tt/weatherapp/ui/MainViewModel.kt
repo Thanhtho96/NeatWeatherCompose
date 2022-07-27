@@ -41,7 +41,7 @@ class MainViewModel(
     var listDailyTempInfo by mutableStateOf<List<DailyTempInfo>>(emptyList())
         private set
 
-    var isRefreshing by mutableStateOf(true)
+    var isRefreshing by mutableStateOf(false)
         private set
 
     var listLocation by mutableStateOf<List<Location>>(emptyList())
@@ -123,11 +123,7 @@ class MainViewModel(
                 searchOptions,
             ) { searchError, list ->
                 if (searchError != null || list == null) {
-                    continuation.resumeWith(
-                        Result.failure(
-                            RuntimeException(mApplication.getString(R.string.search_place_error))
-                        )
-                    )
+                    continuation.resumeWith(Result.success(listOf()))
                     return@search
                 }
 
@@ -145,15 +141,7 @@ class MainViewModel(
                             )
                         }.toList()
 
-                if (listResult.isEmpty()) {
-                    continuation.resumeWith(
-                        Result.failure(
-                            RuntimeException(mApplication.getString(R.string.search_place_error))
-                        )
-                    )
-                } else {
-                    continuation.resumeWith(Result.success(listResult))
-                }
+                continuation.resumeWith(Result.success(listResult))
             }
         }
 
@@ -167,7 +155,6 @@ class MainViewModel(
                 )
                 .collect { location ->
                     val data = location?.weatherData ?: return@collect
-                    setRefresh(false)
                     locationData = location
 
                     val current = data.current
@@ -295,8 +282,19 @@ class MainViewModel(
     }
 
     fun deleteLocation(location: Location) {
-        viewModelScope.launch {
+        viewModelScope.launch(ioDispatcher) {
             weatherDao.deleteLocation(location)
+            if (location.isDisplay) {
+                weatherDao.setGPSLocationToDisplay()
+            }
         }
+    }
+
+    suspend fun changeDisplayLocation(location: Location) {
+        val updatedList = weatherDao.loadListLocation().onEach {
+            it.isDisplay = it == location
+        }
+
+        weatherDao.insertLocation(updatedList)
     }
 }

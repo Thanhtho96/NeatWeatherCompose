@@ -4,9 +4,9 @@ import android.content.Context
 import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.common.network.NetworkEvent
 import com.tt.weatherapp.common.network.NetworkInterceptor
-import com.tt.weatherapp.data.remotes.NiaNetworkDataSource
-import com.tt.weatherapp.data.remotes.RetrofitNiaNetwork
-import com.tt.weatherapp.data.remotes.RetrofitNiaNetworkApi
+import com.tt.weatherapp.data.remotes.NetworkDataSource
+import com.tt.weatherapp.data.remotes.RetrofitNetwork
+import com.tt.weatherapp.data.remotes.RetrofitNetworkApi
 import com.tt.weatherapp.data.repositories.AppRepository
 import com.tt.weatherapp.data.repositories.AppRepositoryImpl
 import okhttp3.Interceptor
@@ -24,7 +24,7 @@ val networkModule = module {
     single { provideApiService(get()) }
     single<AppRepository> { AppRepositoryImpl(androidContext(), get(), get(), get()) }
     single { NetworkEvent(get()) }
-    single<NiaNetworkDataSource> { provideRetrofitNetWork(get()) }
+    single<NetworkDataSource> { provideRetrofitNetWork(get()) }
 }
 
 private val interceptor: Interceptor = Interceptor { chain ->
@@ -57,8 +57,8 @@ private fun provideRetrofit(client: OkHttpClient): Retrofit {
         .build()
 }
 
-private fun provideApiService(retrofit: Retrofit): RetrofitNiaNetworkApi {
-    return retrofit.create(RetrofitNiaNetworkApi::class.java)
+private fun provideApiService(retrofit: Retrofit): RetrofitNetworkApi {
+    return retrofit.create(RetrofitNetworkApi::class.java)
 }
 
 private fun provideHttpClient(context: Context, networkEvent: NetworkEvent): OkHttpClient {
@@ -72,6 +72,6 @@ private fun provideHttpClient(context: Context, networkEvent: NetworkEvent): OkH
         .build()
 }
 
-private fun provideRetrofitNetWork(retrofitNiaNetworkApi: RetrofitNiaNetworkApi): RetrofitNiaNetwork {
-    return RetrofitNiaNetwork(retrofitNiaNetworkApi)
+private fun provideRetrofitNetWork(retrofitNetworkApi: RetrofitNetworkApi): RetrofitNetwork {
+    return RetrofitNetwork(retrofitNetworkApi)
 }

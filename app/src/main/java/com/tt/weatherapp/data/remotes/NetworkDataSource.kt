@@ -2,7 +2,7 @@ package com.tt.weatherapp.data.remotes
 
 import com.tt.weatherapp.model.WeatherData
 
-interface NiaNetworkDataSource {
+interface NetworkDataSource {
     suspend fun getWeatherByCoordinate(
         latitude: Double,
         longitude: Double,

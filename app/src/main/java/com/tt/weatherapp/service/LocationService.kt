@@ -15,6 +15,7 @@ import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.data.local.WeatherDao
 import com.tt.weatherapp.data.repositories.AppRepository
 import com.tt.weatherapp.model.LocationSuggestion
+import com.tt.weatherapp.model.LocationType
 import com.tt.weatherapp.ui.MainActivity
 import com.tt.weatherapp.utils.PermissionUtil
 import kotlinx.coroutines.CoroutineDispatcher
@@ -85,24 +86,35 @@ class LocationService : Service() {
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        return getWeatherData(intent.getBooleanExtra(Constant.IS_FORCE_REFRESH, true)).also {
-            if (it == START_STICKY) startForeground(startId, notification)
-        }
-    }
-
-    fun getWeatherData(isForceRefresh: Boolean): Int {
         val isLocationPermissionGranted = PermissionUtil.isLocationPermissionGranted(this)
         if (isLocationPermissionGranted.not()) return START_NOT_STICKY
-        this.isForceRefresh = isForceRefresh
-        fusedLocationClient.lastLocation.addOnCompleteListener {
-            if (it.result != null) {
-                getWeatherData(it.result.latitude, it.result.longitude)
-            } else {
-                startLocationService()
-            }
-            weatherState?.onSuccess()
-        }
+        startForeground(startId, notification)
+        getWeatherData(intent.getBooleanExtra(Constant.IS_FORCE_REFRESH, true))
         return START_STICKY
+    }
+
+    fun getWeatherData(isForceRefresh: Boolean) {
+        scope.launch {
+            this@LocationService.isForceRefresh = isForceRefresh
+            val cachedLocation = weatherDao.loadDisplayLocation()
+            if (cachedLocation != null && cachedLocation.type == LocationType.SEARCH) {
+                getWeatherData(cachedLocation.lat, cachedLocation.lon)
+                return@launch
+            }
+
+            val isLocationPermissionGranted =
+                PermissionUtil.isLocationPermissionGranted(this@LocationService)
+            if (isLocationPermissionGranted.not()) return@launch
+            fusedLocationClient.lastLocation.addOnCompleteListener {
+                if (it.result != null) {
+                    getWeatherData(it.result.latitude, it.result.longitude)
+                } else {
+                    startLocationService()
+                }
+                weatherState?.onSuccess()
+            }
+        }
+
     }
 
     fun chooseSuggestLocation(locationSuggestion: LocationSuggestion) {
@@ -115,7 +127,9 @@ class LocationService : Service() {
     private fun getWeatherData(latitude: Double, longitude: Double) {
         if (getWeatherJob?.isActive == true) return
         getWeatherJob = scope.launch(ioDispatcher) {
-            appRepository.getWeatherData(latitude, longitude, isForceRefresh, "")
+            appRepository.getWeatherData(latitude, longitude, isForceRefresh, "").collect {
+                weatherState?.onLoading(it)
+            }
             stopSelf()
         }
     }
@@ -173,4 +187,5 @@ class LocationService : Service() {
 
 interface WeatherState {
     fun onSuccess()
+    fun onLoading(isLoading: Boolean)
 }

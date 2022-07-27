@@ -5,7 +5,7 @@ import com.tt.weatherapp.model.WeatherData
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-interface RetrofitNiaNetworkApi {
+interface RetrofitNetworkApi {
     companion object {
         private const val APP_ID = "appid"
         private const val EXCLUDE = "exclude"

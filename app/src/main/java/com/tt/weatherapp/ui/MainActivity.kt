@@ -75,6 +75,10 @@ class MainActivity : BaseActivity<MainViewModel>() {
                         override fun onSuccess() {
                             viewModel.setIsForceRefresh(isRefresh = false, isForce = true)
                         }
+
+                        override fun onLoading(isLoading: Boolean) {
+                            viewModel.setRefresh(isLoading)
+                        }
                     }
                     viewModel.getWeatherInfo(mService?.weatherDao)
                     it.resumeWith(Result.success(Unit))
@@ -134,7 +138,7 @@ class MainActivity : BaseActivity<MainViewModel>() {
                 scope,
                 modalBottomSheetState,
                 navController,
-                refresh = { forceRefreshWeather() },
+                refresh = { forceRefreshWeather(it) },
                 onClickSuggestion = { selectSuggestLocation(it) }
             )
         }
@@ -169,7 +173,7 @@ class MainActivity : BaseActivity<MainViewModel>() {
     }
 
     private fun forceRefreshWeather(isForceRefresh: Boolean = true) {
-        viewModel.setRefresh(true)
+        viewModel.setRefresh(isForceRefresh)
         mService?.getWeatherData(isForceRefresh)
     }
 
@@ -188,7 +192,7 @@ fun MainView(
     scope: CoroutineScope,
     modalBottomSheetState: ModalBottomSheetState,
     navController: NavHostController,
-    refresh: () -> Unit,
+    refresh: (Boolean) -> Unit,
     onClickSuggestion: (LocationSuggestion) -> Unit
 ) {
     ModalBottomSheetLayout(
@@ -234,7 +238,7 @@ fun MainView(
                                                 else -> Constant.Unit.IMPERIAL
                                             }
                                             sharedPrefHelper.setChosenUnit(unit)
-                                            refresh.invoke()
+                                            refresh.invoke(true)
                                         }
                                         modalBottomSheetState.hide()
                                     }
@@ -261,7 +265,7 @@ fun MainView(
                         navController,
                         viewModel,
                         showSetting = { scope.launch { modalBottomSheetState.show() } },
-                        refresh = { refresh.invoke() },
+                        refresh = { refresh.invoke(it) },
                         onClickSuggestion = { onClickSuggestion.invoke(it) }
                     )
                     composable(BottomNav.HourlyNav.route) { Hourly(navController, viewModel) }
@@ -278,7 +282,7 @@ fun NavGraphBuilder.homeGraph(
     navController: NavController,
     viewModel: MainViewModel,
     showSetting: () -> Unit,
-    refresh: () -> Unit,
+    refresh: (Boolean) -> Unit,
     onClickSuggestion: (LocationSuggestion) -> Unit
 ) {
     navigation(startDestination = HomeRoute.Home.route, route = BottomNav.HomeNav.route) {
@@ -352,12 +356,8 @@ private fun FeatureThatRequiresLocationPermission(
                     Button(onClick = { fineLocationPermissionState.launchMultiplePermissionRequest() }) {
                         Text(res.getString(R.string.ok))
                     }
-                },
-                dismissButton = {
-                    Button(onClick = { }) {
-                        Text(res.getString(R.string.cancel))
-                    }
-                })
+                }
+            )
         }
     }
 }

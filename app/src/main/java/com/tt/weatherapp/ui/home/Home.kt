@@ -24,6 +24,7 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -38,6 +39,7 @@ import com.tt.weatherapp.model.*
 import com.tt.weatherapp.ui.MainViewModel
 import com.tt.weatherapp.utils.DateUtil
 import com.tt.weatherapp.utils.StringUtils.capitalize
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -47,7 +49,7 @@ fun Home(
     scaffoldState: ScaffoldState,
     viewModel: MainViewModel,
     showSetting: () -> Unit,
-    refresh: () -> Unit,
+    refresh: (Boolean) -> Unit,
     navigateHourly: () -> Unit,
     navigateDaily: () -> Unit,
     navigateAddPlace: () -> Unit
@@ -68,10 +70,12 @@ fun Home(
                     DrawerContent(
                         navigateAddPlace,
                         showSetting,
+                        refresh,
                         viewModel,
-                        current,
                         res,
-                        homeWeatherUnit
+                        homeWeatherUnit,
+                        scope,
+                        scaffoldState
                     )
                 }
             }
@@ -91,13 +95,14 @@ fun Home(
                         horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.End)
                     ) {
                         IconButton(modifier = Modifier.size(24.dp),
-                            onClick = { refresh.invoke() }) {
+                            onClick = { refresh.invoke(true) }) {
                             Icon(
                                 Icons.Default.Refresh,
                                 null
                             )
                         }
-                        IconButton(modifier = Modifier.size(24.dp),
+                        IconButton(
+                            modifier = Modifier.size(24.dp),
                             onClick = {
                                 scope.launch {
                                     scaffoldState.drawerState.apply {
@@ -158,7 +163,7 @@ private fun MainInformation(
                     current.temp.roundToInt().toString()
                 ),
                 fontWeight = FontWeight.Bold,
-                fontSize = 33.sp,
+                fontSize = 37.sp,
                 modifier = Modifier.padding(end = 7.dp)
             )
             Text(
@@ -191,7 +196,7 @@ private fun MainInformation(
 
         Text(
             text = res.getString(
-                homeWeatherUnit.weatherDescription,
+                R.string.txt_description_meter,
                 current.weather[0].description.capitalize(),
                 res.getQuantityString(
                     homeWeatherUnit.windDescription,
@@ -444,10 +449,12 @@ private fun Daily(
 private fun DrawerContent(
     navigateAddPlace: () -> Unit,
     showSetting: () -> Unit,
+    refresh: (Boolean) -> Unit,
     viewModel: MainViewModel,
-    current: Current,
     res: Resources,
-    homeWeatherUnit: HomeWeatherUnit
+    homeWeatherUnit: HomeWeatherUnit,
+    scope: CoroutineScope,
+    scaffoldState: ScaffoldState
 ) {
     Column(Modifier.fillMaxSize()) {
         LazyColumn(
@@ -464,6 +471,16 @@ private fun DrawerContent(
                     Modifier
                         .fillMaxWidth()
                         .animateItemPlacement()
+                        .clickable {
+                            scope.launch {
+                                viewModel.changeDisplayLocation(it)
+
+                                if (it.isDisplay) return@launch
+
+                                scaffoldState.drawerState.close()
+                                refresh.invoke(false)
+                            }
+                        }
                 ) {
                     Column(
                         Modifier
@@ -472,9 +489,41 @@ private fun DrawerContent(
                     ) {
                         Spacer(modifier = Modifier.height(9.dp))
                         Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (it.isDisplay) {
+                                Canvas(
+                                    modifier = Modifier.size(10.dp),
+                                    onDraw = {
+                                        drawCircle(
+                                            color = Color.Green,
+                                            alpha = 0.7f
+                                        )
+                                    }
+                                )
+                            }
+
+                            Text(
+                                modifier = Modifier.padding(start = if (it.isDisplay) 5.dp else 0.dp),
+                                text = res.getString(
+                                    R.string.updated_at,
+                                    if (it.weatherData != null) {
+                                        DateUtil.format(
+                                            DateUtil.DateFormat.HOUR_MINUTE,
+                                            it.weatherData.current.dt * 1000
+                                        )
+                                    } else {
+                                        stringResource(id = R.string.null_face)
+                                    }
+                                ),
+                                fontSize = 14.sp
+                            )
+                        }
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 7.dp),
+                                .padding(top = 3.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
@@ -494,27 +543,35 @@ private fun DrawerContent(
                             }
                         }
 
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 7.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Image(
-                                painter = rememberAsyncImagePainter(
-                                    ImageRequest.Builder(LocalContext.current)
-                                        .data(
-                                            data = Constant.getWeatherIcon(current.weather[0].icon)
-                                        )
-                                        .apply(block = fun ImageRequest.Builder.() {
-                                            crossfade(true)
-                                        }).build()
-                                ),
-                                contentDescription = null,
-                                modifier = Modifier.size(37.dp)
+                        if (it.weatherData == null) {
+                            Spacer(modifier = Modifier.height(7.dp))
+                            Text(
+                                modifier = Modifier.size(37.dp),
+                                text = res.getString(R.string.null_face),
+                                textAlign = TextAlign.Center
                             )
-
-                            Text(text = current.weather[0].main)
+                        } else {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Image(
+                                    painter = rememberAsyncImagePainter(
+                                        ImageRequest.Builder(LocalContext.current)
+                                            .data(
+                                                data = Constant.getWeatherIcon(it.weatherData.current.weather[0].icon)
+                                            )
+                                            .apply(block = fun ImageRequest.Builder.() {
+                                                crossfade(true)
+                                            }).build()
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(37.dp)
+                                )
+                                Text(text = it.weatherData.current.weather[0].main)
+                            }
                         }
 
                         Row(
