@@ -6,7 +6,6 @@ import com.tt.weatherapp.common.Constant
 class HomeWeatherUnit(weatherData: WeatherData) {
     val currentTemp: Int
     val highLowTemp: Int
-    val weatherDescription: Int
     val windDescription: Int
     val tempFeelLikeHourly: Int
     val windHourly: Int
@@ -20,7 +19,6 @@ class HomeWeatherUnit(weatherData: WeatherData) {
             Constant.Unit.METRIC -> {
                 currentTemp = R.string.txt_celsius_temp
                 highLowTemp = R.string.txt_celsius_low_high_temp
-                weatherDescription = R.string.txt_description_meter
                 windDescription = R.plurals.txt_wind_meter_description
                 tempFeelLikeHourly = R.string.txt_celsius_temp_and_feel_like
                 windHourly = R.plurals.txt_wind_meter_per_sec_compass_direction
@@ -32,7 +30,6 @@ class HomeWeatherUnit(weatherData: WeatherData) {
             Constant.Unit.IMPERIAL -> {
                 currentTemp = R.string.txt_fahrenheit_temp
                 highLowTemp = R.string.txt_fahrenheit_low_high_temp
-                weatherDescription = R.string.txt_description_imperial
                 windDescription = R.plurals.txt_wind_imperial_description
                 tempFeelLikeHourly = R.string.txt_fahrenheit_temp_and_feel_like
                 windHourly = R.plurals.txt_wind_imperial_per_hour_compass_direction

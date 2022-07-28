@@ -4,8 +4,11 @@ import android.content.Context
 import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.common.network.NetworkEvent
 import com.tt.weatherapp.common.network.NetworkInterceptor
-import com.tt.weatherapp.data.remotes.ApiService
+import com.tt.weatherapp.data.remotes.NetworkDataSource
+import com.tt.weatherapp.data.remotes.RetrofitNetwork
+import com.tt.weatherapp.data.remotes.RetrofitNetworkApi
 import com.tt.weatherapp.data.repositories.AppRepository
+import com.tt.weatherapp.data.repositories.AppRepositoryImpl
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -19,8 +22,9 @@ val networkModule = module {
     single { provideHttpClient(androidContext(), get()) }
     single { provideRetrofit(get()) }
     single { provideApiService(get()) }
-    single { AppRepository(androidContext(), get(), get(), get()) }
+    single<AppRepository> { AppRepositoryImpl(androidContext(), get(), get(), get()) }
     single { NetworkEvent(get()) }
+    single<NetworkDataSource> { provideRetrofitNetWork(get()) }
 }
 
 private val interceptor: Interceptor = Interceptor { chain ->
@@ -53,8 +57,8 @@ private fun provideRetrofit(client: OkHttpClient): Retrofit {
         .build()
 }
 
-private fun provideApiService(retrofit: Retrofit): ApiService {
-    return retrofit.create(ApiService::class.java)
+private fun provideApiService(retrofit: Retrofit): RetrofitNetworkApi {
+    return retrofit.create(RetrofitNetworkApi::class.java)
 }
 
 private fun provideHttpClient(context: Context, networkEvent: NetworkEvent): OkHttpClient {
@@ -66,4 +70,8 @@ private fun provideHttpClient(context: Context, networkEvent: NetworkEvent): OkH
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(60, TimeUnit.SECONDS)
         .build()
+}
+
+private fun provideRetrofitNetWork(retrofitNetworkApi: RetrofitNetworkApi): RetrofitNetwork {
+    return RetrofitNetwork(retrofitNetworkApi)
 }

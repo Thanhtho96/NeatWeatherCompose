@@ -1,8 +1,5 @@
 package com.tt.weatherapp.utils
 
-import android.content.Context
-import android.content.DialogInterface
-import androidx.appcompat.app.AlertDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,35 +14,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.tt.weatherapp.R
-
-object AlertDialogUtils {
-    fun showOkCancelDialog(
-        context: Context,
-        message: String?,
-        okListener: DialogInterface.OnClickListener?,
-    ) {
-        AlertDialog.Builder(context)
-            .setMessage(message)
-            .setPositiveButton(context.getString(R.string.ok), okListener)
-            .setNegativeButton(context.getString(R.string.cancel), okListener)
-            .create().apply {
-                setCancelable(false)
-                show()
-            }
-    }
-
-    fun showOkDialog(
-        context: Context,
-        message: String?,
-        okListener: DialogInterface.OnClickListener?
-    ) {
-        AlertDialog.Builder(context)
-            .setMessage(message)
-            .setPositiveButton(context.getString(R.string.ok), okListener)
-            .create()
-            .show()
-    }
-}
 
 @Composable
 fun CustomOkDialog(message: String?, onDismiss: () -> Unit) {

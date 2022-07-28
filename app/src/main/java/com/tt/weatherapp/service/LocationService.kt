@@ -6,19 +6,25 @@ import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
+import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.ExperimentalMaterialApi
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.android.gms.location.*
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.Constant
-import com.tt.weatherapp.data.local.WeatherDatabase
+import com.tt.weatherapp.data.local.WeatherDao
 import com.tt.weatherapp.data.repositories.AppRepository
+import com.tt.weatherapp.model.LocationSuggestion
+import com.tt.weatherapp.model.LocationType
 import com.tt.weatherapp.ui.MainActivity
 import com.tt.weatherapp.utils.PermissionUtil
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
+import org.koin.core.qualifier.named
 
 @ExperimentalPermissionsApi
 @ExperimentalFoundationApi
@@ -26,14 +32,16 @@ import org.koin.android.ext.android.inject
 class LocationService : Service() {
     private val appRepository by inject<AppRepository>()
     private val scope by inject<CoroutineScope>()
-    val database by inject<WeatherDatabase>()
-    var weatherState: WeatherState? = null
+    private val weatherDao by inject<WeatherDao>()
+    private val ioDispatcher by inject<CoroutineDispatcher>(named(Constant.Dispatcher.IO))
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
     private var isForceRefresh = true
-
+    private var getWeatherJob: Job? = null
     private val binder = LocalBinder()
+
+    var weatherState: WeatherState? = null
 
     // If the notification supports a direct reply action, use
     // PendingIntent.FLAG_MUTABLE instead.
@@ -79,29 +87,56 @@ class LocationService : Service() {
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        return getWeatherData(intent.getBooleanExtra(Constant.IS_FORCE_REFRESH, true)).also {
-            if (it == START_STICKY) startForeground(startId, notification)
-        }
-    }
-
-    fun getWeatherData(isForceRefresh: Boolean): Int {
         val isLocationPermissionGranted = PermissionUtil.isLocationPermissionGranted(this)
         if (isLocationPermissionGranted.not()) return START_NOT_STICKY
-        this.isForceRefresh = isForceRefresh
-        fusedLocationClient.lastLocation.addOnCompleteListener {
-            if (it.result != null) {
-                getWeatherData(it.result.latitude, it.result.longitude)
-            } else {
-                startLocationService()
-            }
-            weatherState?.onSuccess()
-        }
+        startForeground(startId, notification)
+        getWeatherData(intent.getBooleanExtra(Constant.IS_FORCE_REFRESH, true))
         return START_STICKY
     }
 
-    private fun getWeatherData(latitude: Double, longitude: Double) {
+    fun getWeatherData(isForceRefresh: Boolean) {
         scope.launch {
-            appRepository.getWeatherOneCall(latitude, longitude, isForceRefresh)
+            this@LocationService.isForceRefresh = isForceRefresh
+            val cachedLocation = weatherDao.loadDisplayLocation()
+            if (cachedLocation != null && cachedLocation.type == LocationType.SEARCH) {
+                getWeatherData(cachedLocation.lat, cachedLocation.lon)
+                return@launch
+            }
+
+            val isLocationPermissionGranted =
+                PermissionUtil.isLocationPermissionGranted(this@LocationService)
+            if (isLocationPermissionGranted.not()) return@launch
+            fusedLocationClient.lastLocation.addOnCompleteListener {
+                if (it.result != null) {
+                    getWeatherData(it.result.latitude, it.result.longitude)
+                } else {
+                    startLocationService()
+                }
+                weatherState?.onSuccess()
+            }
+        }
+
+    }
+
+    fun chooseSuggestLocation(locationSuggestion: LocationSuggestion) {
+        scope.launch(ioDispatcher) {
+            appRepository.addSearchLocation(locationSuggestion, "")
+            stopSelf()
+        }
+    }
+
+    fun toggleUnit(@StringRes unitId: Int) {
+        scope.launch(ioDispatcher) {
+            appRepository.toggleUnit(unitId)
+        }
+    }
+
+    private fun getWeatherData(latitude: Double, longitude: Double) {
+        if (getWeatherJob?.isActive == true) return
+        getWeatherJob = scope.launch(ioDispatcher) {
+            appRepository.getWeatherData(latitude, longitude, isForceRefresh, "").collect {
+                weatherState?.onLoading(it)
+            }
             stopSelf()
         }
     }
@@ -159,4 +194,5 @@ class LocationService : Service() {
 
 interface WeatherState {
     fun onSuccess()
+    fun onLoading(isLoading: Boolean)
 }

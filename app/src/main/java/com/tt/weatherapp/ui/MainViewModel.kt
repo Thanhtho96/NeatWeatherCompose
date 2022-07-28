@@ -1,27 +1,37 @@
 package com.tt.weatherapp.ui
 
 import android.app.AlarmManager
+import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
+import com.here.sdk.core.GeoCoordinates
+import com.here.sdk.core.LanguageCode
+import com.here.sdk.search.SearchEngine
+import com.here.sdk.search.SearchOptions
+import com.here.sdk.search.TextQuery
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.BaseViewModel
 import com.tt.weatherapp.common.Constant
-import com.tt.weatherapp.data.local.WeatherDatabase
+import com.tt.weatherapp.data.local.DataStoreHelper
+import com.tt.weatherapp.data.local.WeatherDao
 import com.tt.weatherapp.model.*
 import com.tt.weatherapp.utils.DateUtil
 import com.tt.weatherapp.utils.WindowsUtil
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-class MainViewModel : BaseViewModel() {
+class MainViewModel(
+    private val searchEngine: SearchEngine?,
+    private val weatherDao: WeatherDao,
+    private val dataStoreHelper: DataStoreHelper,
+    private val ioDispatcher: CoroutineDispatcher,
+    private val mainDispatcher: CoroutineDispatcher
+) : BaseViewModel() {
 
-    var weatherData by mutableStateOf<WeatherData?>(null)
+    var locationData by mutableStateOf<Location?>(null)
         private set
 
     var hourly by mutableStateOf<List<Hourly>>(emptyList())
@@ -33,19 +43,45 @@ class MainViewModel : BaseViewModel() {
     var listDailyTempInfo by mutableStateOf<List<DailyTempInfo>>(emptyList())
         private set
 
-    var isRefreshing by mutableStateOf(true)
+    var isRefreshing by mutableStateOf(false)
+        private set
+
+    var listLocation by mutableStateOf<List<Location>>(emptyList())
+        private set
+
+    var selectUnit by mutableStateOf(Constant.Unit.METRIC)
         private set
 
     private val mIsForceRefresh = MutableStateFlow(WeatherRequest())
     val isForceRefresh = mIsForceRefresh.asStateFlow()
 
     private var refreshJob: Job? = null
+    private var searchPlaceJob: Job? = null
+
+    var listSuggestion by mutableStateOf<List<LocationSuggestion>>(emptyList())
+        private set
+
+    private var latitude: Double = 0.0
+    private var longitude: Double = 0.0
+
+    private val searchOptions by lazy {
+        SearchOptions().apply {
+            languageCode = LanguageCode.EN_US
+            maxItems = 30
+        }
+    }
 
     fun setRefresh(isRefreshing: Boolean) {
         this.isRefreshing = isRefreshing
     }
 
     init {
+        getWeatherPeriodically()
+        getWeatherInfo()
+        listenUnit()
+    }
+
+    private fun getWeatherPeriodically() {
         viewModelScope.launch {
             isForceRefresh.filter { it.isRefresh.not() }.collect {
                 refreshJob?.cancelAndJoin()
@@ -57,33 +93,99 @@ class MainViewModel : BaseViewModel() {
         }
     }
 
+    private fun listenUnit() {
+        viewModelScope.launch {
+            dataStoreHelper.listenChosenUnit(mApplication)
+                .stateIn(viewModelScope)
+                .collect {
+                    delay(300)
+                    selectUnit = it
+                }
+        }
+    }
+
     fun setIsForceRefresh(isRefresh: Boolean, isForce: Boolean) {
         mIsForceRefresh.value = mIsForceRefresh.value.copy(isRefresh = isRefresh, isForce = isForce)
     }
 
-    fun getWeatherInfo(database: WeatherDatabase?) {
-        if (database == null) return
-        viewModelScope.launch {
-            database.weatherDao().getWeather()
+    fun searchPlaceWithKeyword(keyword: String) {
+        if (keyword.isBlank()) {
+            listSuggestion = listOf()
+            return
+        }
+
+        viewModelScope.launch(ioDispatcher) {
+            searchPlaceJob?.cancelAndJoin()
+            searchPlaceJob = launch {
+                try {
+                    listSuggestion = searchPlace(keyword)
+                } catch (e: RuntimeException) {
+                    listSuggestion = listOf()
+                    withContext(mainDispatcher) {
+                        Toast.makeText(mApplication, e.message, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun searchPlace(keyword: String) =
+        suspendCancellableCoroutine<List<LocationSuggestion>> { continuation ->
+            if (searchEngine == null) {
+                continuation.resumeWith(
+                    Result.failure(
+                        RuntimeException(mApplication.getString(R.string.search_engine_fail))
+                    )
+                )
+                return@suspendCancellableCoroutine
+            }
+            searchEngine.search(
+                TextQuery(keyword, TextQuery.Area(GeoCoordinates(latitude, longitude))),
+                searchOptions,
+            ) { searchError, list ->
+                if (searchError != null || list == null) {
+                    continuation.resumeWith(Result.success(listOf()))
+                    return@search
+                }
+
+                val listResult =
+                    list.asSequence().filter { it != null && it.geoCoordinates != null }
+                        .filter { it.address.city.isNotBlank() && it.address.country.isNotBlank() }
+                        .distinctBy { "${it.address.city}, ${it.address.country}" }
+                        .filter { location -> "${location.address.city}, ${location.address.country}" !in listLocation.map { it.name } }
+                        .map {
+                            LocationSuggestion(
+                                it.address.city,
+                                it.address.country,
+                                it.geoCoordinates!!.latitude,
+                                it.geoCoordinates!!.longitude
+                            )
+                        }.toList()
+
+                continuation.resumeWith(Result.success(listResult))
+            }
+        }
+
+    private fun getWeatherInfo() {
+        viewModelScope.launch(ioDispatcher) {
+            weatherDao.getDisplayLocation()
                 .shareIn(
                     viewModelScope,
                     SharingStarted.WhileSubscribed(5000)
                 )
-                .collect { data ->
-                    setRefresh(false)
-                    weatherData = data ?: return@collect
+                .collect { location ->
+                    val data = location?.weatherData ?: return@collect
+                    locationData = location
 
                     val current = data.current
                     val daily = data.daily.filterIndexed { index, _ -> index != 0 }
+                    val homeWeatherUnit = HomeWeatherUnit(data)
 
                     listCurrentWeatherData = arrayListOf(
                         CurrentWeatherGridInfo(
                             R.drawable.ic_feel_like_white,
                             R.string.txt_feel_like,
-                            when (data.unit) {
-                                Constant.Unit.METRIC -> R.string.txt_celsius_temp
-                                Constant.Unit.IMPERIAL -> R.string.txt_fahrenheit_temp
-                            },
+                            homeWeatherUnit.feelLike,
                             current.feels_like.roundToInt().toString()
                         ),
                         CurrentWeatherGridInfo(
@@ -101,10 +203,7 @@ class MainViewModel : BaseViewModel() {
                         CurrentWeatherGridInfo(
                             R.drawable.ic_dew_point_white,
                             R.string.txt_dew_point,
-                            when (data.unit) {
-                                Constant.Unit.METRIC -> R.string.txt_celsius_dew_point
-                                Constant.Unit.IMPERIAL -> R.string.txt_fahrenheit_dew_point
-                            },
+                            homeWeatherUnit.dewPoint,
                             current.dew_point.roundToInt().toString()
                         ),
                         CurrentWeatherGridInfo(
@@ -170,11 +269,51 @@ class MainViewModel : BaseViewModel() {
 
                         listHourly.add(it.apply {
                             dtHeader = currentDt
-                            unit = data.unit
                         })
                     }
                     hourly = listHourly
                 }
         }
+
+        viewModelScope.launch(ioDispatcher) {
+            weatherDao.getGPSLocation()
+                .shareIn(
+                    viewModelScope,
+                    SharingStarted.WhileSubscribed(5000)
+                )
+                .collect {
+                    if (it == null) return@collect
+                    latitude = it.lat
+                    longitude = it.lon
+                }
+        }
+
+        viewModelScope.launch(ioDispatcher) {
+            weatherDao.getListLocation()
+                .shareIn(
+                    viewModelScope,
+                    SharingStarted.WhileSubscribed(5000)
+                )
+                .collect {
+                    listLocation = it
+                }
+        }
+    }
+
+    fun deleteLocation(location: Location) {
+        viewModelScope.launch(ioDispatcher) {
+            weatherDao.deleteLocation(location)
+            if (location.isDisplay) {
+                weatherDao.setGPSLocationToDisplay()
+            }
+        }
+    }
+
+    suspend fun changeDisplayLocation(location: Location) {
+        val updatedList = weatherDao.loadListLocation().onEach {
+            it.isDisplay = it == location
+        }
+
+        weatherDao.insertLocation(updatedList)
     }
 }
