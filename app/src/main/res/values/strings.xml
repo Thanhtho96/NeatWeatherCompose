@@ -52,8 +52,8 @@
     </plurals>
 
     <plurals name="txt_wind_meter_description">
-        <item quantity="one">Wind %2$s at %1$d m/h</item>
-        <item quantity="other">Wind %2$s at %1$d m/h</item>
+        <item quantity="one">Wind %2$s at %1$d m/s</item>
+        <item quantity="other">Wind %2$s at %1$d m/s</item>
     </plurals>
 
     <plurals name="txt_wind_imperial_description">

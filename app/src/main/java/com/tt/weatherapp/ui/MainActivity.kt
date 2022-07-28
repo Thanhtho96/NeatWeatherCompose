@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -39,7 +40,6 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.BaseActivity
 import com.tt.weatherapp.common.Constant
-import com.tt.weatherapp.data.local.SharedPrefHelper
 import com.tt.weatherapp.model.LocationSuggestion
 import com.tt.weatherapp.navigation.BottomNav
 import com.tt.weatherapp.navigation.HomeRoute
@@ -53,7 +53,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import org.koin.androidx.compose.inject
 import org.koin.androidx.viewmodel.ext.android.getViewModel
 
 @ExperimentalPermissionsApi
@@ -80,7 +79,6 @@ class MainActivity : BaseActivity<MainViewModel>() {
                             viewModel.setRefresh(isLoading)
                         }
                     }
-                    viewModel.getWeatherInfo(mService?.weatherDao)
                     it.resumeWith(Result.success(Unit))
                 }
 
@@ -100,12 +98,12 @@ class MainActivity : BaseActivity<MainViewModel>() {
         val lifecycleOwner = LocalLifecycleOwner.current
         val scope = rememberCoroutineScope()
         val scaffoldState = rememberScaffoldState()
-        val sharedPrefHelper by inject<SharedPrefHelper>()
         val navController = rememberNavController()
         val modalBottomSheetState =
             rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
+        val selectUnit = viewModel.selectUnit
 
         BackHandler(scaffoldState.drawerState.isOpen || modalBottomSheetState.isVisible) {
             scope.launch {
@@ -133,13 +131,14 @@ class MainActivity : BaseActivity<MainViewModel>() {
         ) {
             MainView(
                 scaffoldState,
-                sharedPrefHelper,
+                selectUnit,
                 viewModel,
                 scope,
                 modalBottomSheetState,
                 navController,
                 refresh = { forceRefreshWeather(it) },
-                onClickSuggestion = { selectSuggestLocation(it) }
+                onClickSuggestion = { selectSuggestLocation(it) },
+                toggleUnit = { toggleUnit(it) }
             )
         }
 
@@ -180,6 +179,10 @@ class MainActivity : BaseActivity<MainViewModel>() {
     private fun selectSuggestLocation(locationSuggestion: LocationSuggestion) {
         mService?.chooseSuggestLocation(locationSuggestion)
     }
+
+    private fun toggleUnit(@StringRes unitId: Int) {
+        mService?.toggleUnit(unitId)
+    }
 }
 
 @ExperimentalFoundationApi
@@ -187,13 +190,14 @@ class MainActivity : BaseActivity<MainViewModel>() {
 @Composable
 fun MainView(
     scaffoldState: ScaffoldState,
-    sharedPrefHelper: SharedPrefHelper,
+    selectUnit: Constant.Unit,
     viewModel: MainViewModel,
     scope: CoroutineScope,
     modalBottomSheetState: ModalBottomSheetState,
     navController: NavHostController,
     refresh: (Boolean) -> Unit,
-    onClickSuggestion: (LocationSuggestion) -> Unit
+    onClickSuggestion: (LocationSuggestion) -> Unit,
+    toggleUnit: (Int) -> Unit
 ) {
     ModalBottomSheetLayout(
         sheetContent = {
@@ -219,7 +223,7 @@ fun MainView(
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    val selectString = when (sharedPrefHelper.getChosenUnit()) {
+                    val selectString = when (selectUnit) {
                         Constant.Unit.METRIC -> R.string.txt_metric
                         Constant.Unit.IMPERIAL -> R.string.txt_imperial
                     }
@@ -231,15 +235,7 @@ fun MainView(
                                 .background(color = colorResource(id = if (it == selectString) R.color.yellow else R.color.transparent))
                                 .clickable {
                                     scope.launch {
-                                        val isChangeUnit = selectString != it
-                                        if (isChangeUnit) {
-                                            val unit = when (it) {
-                                                R.string.txt_metric -> Constant.Unit.METRIC
-                                                else -> Constant.Unit.IMPERIAL
-                                            }
-                                            sharedPrefHelper.setChosenUnit(unit)
-                                            refresh.invoke(true)
-                                        }
+                                        toggleUnit.invoke(it)
                                         modalBottomSheetState.hide()
                                     }
                                 },

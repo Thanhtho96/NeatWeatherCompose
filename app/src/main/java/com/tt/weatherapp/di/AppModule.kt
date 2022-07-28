@@ -1,9 +1,8 @@
 package com.tt.weatherapp.di
 
-import androidx.preference.PreferenceManager
 import com.tt.weatherapp.App
 import com.tt.weatherapp.common.Constant.Dispatcher
-import com.tt.weatherapp.data.local.SharedPrefHelper
+import com.tt.weatherapp.data.local.DataStoreHelper
 import com.tt.weatherapp.data.local.WeatherDatabase
 import com.tt.weatherapp.ui.MainViewModel
 import kotlinx.coroutines.CoroutineDispatcher
@@ -18,6 +17,7 @@ val viewModelModule = module {
         MainViewModel(
             get(),
             get(),
+            get(),
             get(named(Dispatcher.IO)),
             get(named(Dispatcher.MAIN))
         )
@@ -25,8 +25,7 @@ val viewModelModule = module {
 }
 
 val appModule = module {
-    single { PreferenceManager.getDefaultSharedPreferences(androidContext()) }
-    single { SharedPrefHelper(get()) }
+    single { DataStoreHelper() }
     single { App.appLifeScope }
     single { App.searchEngine }
     single { WeatherDatabase.getDatabase(androidContext()).weatherDao() }

@@ -6,6 +6,7 @@ import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
+import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.ExperimentalMaterialApi
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -31,16 +32,16 @@ import org.koin.core.qualifier.named
 class LocationService : Service() {
     private val appRepository by inject<AppRepository>()
     private val scope by inject<CoroutineScope>()
-    val weatherDao by inject<WeatherDao>()
+    private val weatherDao by inject<WeatherDao>()
     private val ioDispatcher by inject<CoroutineDispatcher>(named(Constant.Dispatcher.IO))
-    var weatherState: WeatherState? = null
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
     private var isForceRefresh = true
     private var getWeatherJob: Job? = null
-
     private val binder = LocalBinder()
+
+    var weatherState: WeatherState? = null
 
     // If the notification supports a direct reply action, use
     // PendingIntent.FLAG_MUTABLE instead.
@@ -121,6 +122,12 @@ class LocationService : Service() {
         scope.launch(ioDispatcher) {
             appRepository.addSearchLocation(locationSuggestion, "")
             stopSelf()
+        }
+    }
+
+    fun toggleUnit(@StringRes unitId: Int) {
+        scope.launch(ioDispatcher) {
+            appRepository.toggleUnit(unitId)
         }
     }
 

@@ -1,6 +1,8 @@
 package com.tt.weatherapp
 
 import android.app.Application
+import android.content.Context
+import androidx.datastore.preferences.preferencesDataStore
 import com.here.sdk.core.errors.InstantiationErrorException
 import com.here.sdk.search.SearchEngine
 import com.tt.weatherapp.di.appModule
@@ -36,6 +38,9 @@ class App : Application() {
     }
 
     companion object {
+        // At the top level of your kotlin file:
+        val Context.dataStore by preferencesDataStore(name = "settings")
+
         private var mAppLifeScope: CoroutineScope? = null
         val appLifeScope get() = mAppLifeScope!!
 

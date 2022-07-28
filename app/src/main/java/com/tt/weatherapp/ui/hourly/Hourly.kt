@@ -87,7 +87,7 @@ fun Hourly(navController: NavController, viewModel: MainViewModel) {
                             .fillMaxWidth()
                             .padding(bottom = 7.dp),
                         text =
-                        if (DateUtils.isToday(day))
+                        if (DateUtils.isToday(day!!))
                             stringResource(id = R.string.txt_today)
                         else
                             DateUtil.format(DateUtil.DateFormat.DAY_OF_WEEK_MONTH_DAY, day),

@@ -14,6 +14,7 @@ import com.here.sdk.search.TextQuery
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.BaseViewModel
 import com.tt.weatherapp.common.Constant
+import com.tt.weatherapp.data.local.DataStoreHelper
 import com.tt.weatherapp.data.local.WeatherDao
 import com.tt.weatherapp.model.*
 import com.tt.weatherapp.utils.DateUtil
@@ -25,6 +26,7 @@ import kotlin.math.roundToInt
 class MainViewModel(
     private val searchEngine: SearchEngine?,
     private val weatherDao: WeatherDao,
+    private val dataStoreHelper: DataStoreHelper,
     private val ioDispatcher: CoroutineDispatcher,
     private val mainDispatcher: CoroutineDispatcher
 ) : BaseViewModel() {
@@ -47,6 +49,9 @@ class MainViewModel(
     var listLocation by mutableStateOf<List<Location>>(emptyList())
         private set
 
+    var selectUnit by mutableStateOf(Constant.Unit.METRIC)
+        private set
+
     private val mIsForceRefresh = MutableStateFlow(WeatherRequest())
     val isForceRefresh = mIsForceRefresh.asStateFlow()
 
@@ -58,7 +63,6 @@ class MainViewModel(
 
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
-
 
     private val searchOptions by lazy {
         SearchOptions().apply {
@@ -72,6 +76,12 @@ class MainViewModel(
     }
 
     init {
+        getWeatherPeriodically()
+        getWeatherInfo()
+        listenUnit()
+    }
+
+    private fun getWeatherPeriodically() {
         viewModelScope.launch {
             isForceRefresh.filter { it.isRefresh.not() }.collect {
                 refreshJob?.cancelAndJoin()
@@ -80,6 +90,17 @@ class MainViewModel(
                     setIsForceRefresh(isRefresh = true, isForce = true)
                 }
             }
+        }
+    }
+
+    private fun listenUnit() {
+        viewModelScope.launch {
+            dataStoreHelper.listenChosenUnit(mApplication)
+                .stateIn(viewModelScope)
+                .collect {
+                    delay(300)
+                    selectUnit = it
+                }
         }
     }
 
@@ -145,8 +166,7 @@ class MainViewModel(
             }
         }
 
-    fun getWeatherInfo(weatherDao: WeatherDao?) {
-        if (weatherDao == null) return
+    private fun getWeatherInfo() {
         viewModelScope.launch(ioDispatcher) {
             weatherDao.getDisplayLocation()
                 .shareIn(
@@ -249,7 +269,6 @@ class MainViewModel(
 
                         listHourly.add(it.apply {
                             dtHeader = currentDt
-                            unit = data.unit
                         })
                     }
                     hourly = listHourly
