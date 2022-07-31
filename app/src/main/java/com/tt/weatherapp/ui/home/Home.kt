@@ -23,7 +23,9 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -38,7 +40,6 @@ import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.model.*
 import com.tt.weatherapp.ui.MainViewModel
 import com.tt.weatherapp.utils.DateUtil
-import com.tt.weatherapp.utils.StringUtils.capitalize
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -83,6 +84,7 @@ fun Home(
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 Column(
                     modifier = Modifier
+                        .padding(it)
                         .fillMaxSize()
                         .statusBarsPadding()
                 ) {
@@ -197,7 +199,7 @@ private fun MainInformation(
         Text(
             text = res.getString(
                 R.string.txt_description_meter,
-                current.weather[0].description.capitalize(),
+                current.weather[0].description.capitalize(Locale.current),
                 res.getQuantityString(
                     homeWeatherUnit.windDescription,
                     current.wind_speed.roundToInt(),
@@ -218,7 +220,7 @@ private fun MainInformation(
                 .fillMaxWidth()
                 .padding(vertical = 15.dp)
         ) {
-            val boxDimen = ((maxWidth.value - 12 * 2) / 3).dp
+            val boxDimen = ((maxWidth.value - 12 * 2) / 3).dp - 1.dp
 
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 FlowRow(
@@ -306,7 +308,7 @@ private fun Hourly(
                     ) {
                         Text(
                             text = stringResource(
-                                homeWeatherUnit.currentTemp,
+                                homeWeatherUnit.onlyDegreeSymbol,
                                 hourly.temp.roundToInt().toString(),
                             ),
                             fontSize = 17.sp
@@ -347,7 +349,8 @@ private fun Hourly(
                             text = DateUtil.format(
                                 DateUtil.DateFormat.HOUR_MINUTE,
                                 hourly.dt * 1000
-                            ), fontSize = 17.sp
+                            ).replace(":00", "h"),
+                            fontSize = 17.sp
                         )
                     }
                 }
@@ -395,23 +398,27 @@ private fun Daily(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Spacer(modifier = Modifier.height(Dp(it.topMargin)))
-                        Text(text = it.maxTemp)
-                        Spacer(
-                            modifier = Modifier
-                                .background(
-                                    shape = RoundedCornerShape(3.dp),
-                                    brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color(0xFFFF3300),
-                                            Color(0xFFF35625),
-                                            Color(0xFFFFC32B),
+                        if (it.maxTemp == it.minTemp) {
+                            Text(text = it.maxTemp)
+                        } else {
+                            Text(text = it.maxTemp)
+                            Spacer(
+                                modifier = Modifier
+                                    .background(
+                                        shape = RoundedCornerShape(3.dp),
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(
+                                                Color(0xFFFF3300),
+                                                Color(0xFFF35625),
+                                                Color(0xFFFFC32B),
+                                            )
                                         )
                                     )
-                                )
-                                .height(Dp(it.height))
-                                .width(5.dp)
-                        )
-                        Text(text = it.minTemp)
+                                    .height(Dp(it.height))
+                                    .width(5.dp)
+                            )
+                            Text(text = it.minTemp)
+                        }
                     }
                 }
             }

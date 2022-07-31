@@ -1,5 +1,8 @@
 package com.tt.weatherapp.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Hourly(
     val dt: Long,
     val feels_like: Double,

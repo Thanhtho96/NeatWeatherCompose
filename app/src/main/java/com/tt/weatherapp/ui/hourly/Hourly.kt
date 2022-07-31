@@ -21,7 +21,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -33,7 +35,6 @@ import com.tt.weatherapp.model.HomeWeatherUnit
 import com.tt.weatherapp.ui.MainViewModel
 import com.tt.weatherapp.utils.DateUtil
 import com.tt.weatherapp.utils.DecimalFormat
-import com.tt.weatherapp.utils.StringUtils.capitalize
 import kotlin.math.roundToInt
 
 @ExperimentalFoundationApi
@@ -126,7 +127,7 @@ fun Hourly(navController: NavController, viewModel: MainViewModel) {
                                 ),
                                 fontWeight = FontWeight.Bold
                             )
-                            Text(text = hourly.weather[0].description.capitalize())
+                            Text(text = hourly.weather[0].description.capitalize(Locale.current))
                             Text(
                                 text = res.getQuantityString(
                                     homeWeatherUnit.windHourly,

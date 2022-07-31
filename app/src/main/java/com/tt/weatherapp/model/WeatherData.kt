@@ -1,7 +1,9 @@
 package com.tt.weatherapp.model
 
 import com.tt.weatherapp.common.Constant
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class WeatherData(
     val current: Current,
     val daily: List<Daily>,

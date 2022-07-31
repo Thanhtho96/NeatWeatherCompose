@@ -3,8 +3,10 @@ package com.tt.weatherapp.model
 import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
+import kotlinx.serialization.Serializable
 import java.util.*
 
+@Serializable
 @Entity(primaryKeys = ["lat", "lon", "type"])
 data class Location(
     val lat: Double,

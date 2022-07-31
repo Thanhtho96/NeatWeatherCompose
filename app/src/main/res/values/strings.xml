@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name_debug">Neat Weather Debug</string>
     <string name="app_name_release">Neat Weather</string>
+    <string name="small_widget">Small Widget</string>
+    <string name="medium_widget">Medium Widget</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="home">Home</string>
@@ -31,6 +33,7 @@
     <string name="txt_kilometer_visibility" translatable="false">%s km</string>
     <string name="txt_meter_visibility" translatable="false">%s m</string>
 
+    <string name="txt_without_unit_low_high_temp" translatable="false">H:%s° L:%s°</string>
     <string name="txt_celsius_low_high_temp" translatable="false">%s°C / %s°C</string>
     <string name="txt_fahrenheit_low_high_temp" translatable="false">%s°F / %s°F</string>
 
@@ -149,4 +152,7 @@
     <string name="search_place_error">Can\'t found any location with this name</string>
     <string name="search_engine_fail">"Something went wrong with our search engine. Let's try again later"</string>
     <string name="null_face">-_-</string>
+    <string name="please_choose_location">Please choose a location</string>
+    <string name="refresh">Refresh</string>
+    <string name="no_place_found">No place found</string>
 </resources>

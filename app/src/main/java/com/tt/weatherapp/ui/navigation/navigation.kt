@@ -1,4 +1,4 @@
-package com.tt.weatherapp.navigation
+package com.tt.weatherapp.ui.navigation
 
 sealed class BottomNav(val route: String) {
     object HomeNav : BottomNav("home_route")

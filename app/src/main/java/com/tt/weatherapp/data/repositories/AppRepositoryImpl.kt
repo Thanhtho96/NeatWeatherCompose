@@ -78,7 +78,7 @@ class AppRepositoryImpl(
                             latitude,
                             longitude,
                             1
-                        )
+                        ) ?: emptyList()
                     } catch (e: IOException) {
                         emptyList()
                     }
@@ -238,5 +238,9 @@ class AppRepositoryImpl(
             }
 
         weatherDao.insertLocation(updatedWeathers)
+    }
+
+    override suspend fun refreshLocation(language: String) {
+
     }
 }

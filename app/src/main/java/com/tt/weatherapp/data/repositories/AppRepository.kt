@@ -15,4 +15,6 @@ interface AppRepository {
     suspend fun addSearchLocation(locationSuggestion: LocationSuggestion, language: String)
 
     suspend fun toggleUnit(@StringRes unitId: Int)
+
+    suspend fun refreshLocation(language: String)
 }
