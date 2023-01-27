@@ -36,11 +36,12 @@ fun SearchPlace(
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(inputLocation) {
-        delay(170)
+        delay(100)
         viewModel.searchPlaceWithKeyword(inputLocation)
     }
 
     LaunchedEffect(Unit) {
+        delay(100)
         focusRequester.requestFocus()
     }
 

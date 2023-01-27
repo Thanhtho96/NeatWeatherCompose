@@ -5,6 +5,7 @@ import com.tt.weatherapp.common.Constant.Dispatcher
 import com.tt.weatherapp.data.local.DataStoreHelper
 import com.tt.weatherapp.data.local.WeatherDatabase
 import com.tt.weatherapp.ui.MainViewModel
+import com.tt.weatherapp.widget.WidgetConfigViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.koin.androidContext
@@ -22,6 +23,7 @@ val viewModelModule = module {
             get(named(Dispatcher.MAIN))
         )
     }
+    viewModel { WidgetConfigViewModel(get()) }
 }
 
 val appModule = module {
@@ -38,7 +40,7 @@ val dispatcherModule = module {
     single(named(Dispatcher.UNCONFINED)) { provideUnconfinedDispatcher() }
 }
 
-fun provideMainDispatcher(): CoroutineDispatcher = Dispatchers.Main
-fun provideDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
-fun provideIODispatcher(): CoroutineDispatcher = Dispatchers.IO
-fun provideUnconfinedDispatcher(): CoroutineDispatcher = Dispatchers.Unconfined
+private fun provideMainDispatcher(): CoroutineDispatcher = Dispatchers.Main
+private fun provideDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
+private fun provideIODispatcher(): CoroutineDispatcher = Dispatchers.IO
+private fun provideUnconfinedDispatcher(): CoroutineDispatcher = Dispatchers.Unconfined

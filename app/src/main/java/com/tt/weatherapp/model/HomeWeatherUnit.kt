@@ -5,6 +5,8 @@ import com.tt.weatherapp.common.Constant
 
 class HomeWeatherUnit(weatherData: WeatherData) {
     val currentTemp: Int
+    val onlyDegreeSymbol: Int = R.string.txt_temp_without_unit
+    val highLowTempWidget: Int = R.string.txt_without_unit_low_high_temp
     val highLowTemp: Int
     val windDescription: Int
     val tempFeelLikeHourly: Int

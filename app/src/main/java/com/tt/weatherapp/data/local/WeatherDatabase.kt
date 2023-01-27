@@ -3,14 +3,17 @@ package com.tt.weatherapp.data.local
 import android.content.Context
 import androidx.room.*
 import com.tt.weatherapp.model.Location
+import com.tt.weatherapp.model.WidgetLocation
 
 @Database(
     entities = [
-        Location::class
+        Location::class,
+        WidgetLocation::class
     ],
-    version = 2,
+    version = 3,
     autoMigrations = [
-        AutoMigration(from = 1, to = 2, spec = DatabaseMigrations.Schema1to2::class)
+        AutoMigration(from = 1, to = 2, spec = DatabaseMigrations.Schema1to2::class),
+        AutoMigration(from = 2, to = 3)
     ],
     exportSchema = true
 )

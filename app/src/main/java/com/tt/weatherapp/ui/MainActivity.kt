@@ -14,6 +14,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
+import androidx.compose.material.pullrefresh.PullRefreshDefaults
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -34,22 +38,20 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import com.google.accompanist.permissions.*
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.BaseActivity
 import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.model.LocationSuggestion
-import com.tt.weatherapp.navigation.BottomNav
-import com.tt.weatherapp.navigation.HomeRoute
 import com.tt.weatherapp.service.LocationService
 import com.tt.weatherapp.service.WeatherState
 import com.tt.weatherapp.ui.daily.Daily
 import com.tt.weatherapp.ui.home.Home
 import com.tt.weatherapp.ui.home.SearchPlace
 import com.tt.weatherapp.ui.hourly.Hourly
+import com.tt.weatherapp.ui.navigation.BottomNav
+import com.tt.weatherapp.ui.navigation.HomeRoute
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -61,35 +63,33 @@ import org.koin.androidx.viewmodel.ext.android.getViewModel
 class MainActivity : BaseActivity<MainViewModel>() {
     private var mService: LocationService? = null
     override fun viewModelClass() = getViewModel<MainViewModel>()
-    private lateinit var connection: ServiceConnection
+    private var connection: ServiceConnection? = null
 
-    private suspend fun bindWeatherService() {
-        suspendCancellableCoroutine<Unit> {
-            connection = object : ServiceConnection {
-                override fun onServiceConnected(className: ComponentName, service: IBinder) {
-                    // We've bound to LocalService, cast the IBinder and get LocalService instance
-                    val binder = service as LocationService.LocalBinder
-                    mService = binder.getService()
-                    mService?.weatherState = object : WeatherState {
-                        override fun onSuccess() {
-                            viewModel.setIsForceRefresh(isRefresh = false, isForce = true)
-                        }
-
-                        override fun onLoading(isLoading: Boolean) {
-                            viewModel.setRefresh(isLoading)
-                        }
+    private suspend fun bindWeatherService() = suspendCancellableCoroutine {
+        connection = object : ServiceConnection {
+            override fun onServiceConnected(className: ComponentName, service: IBinder) {
+                // We've bound to LocalService, cast the IBinder and get LocalService instance
+                val binder = service as LocationService.LocalBinder
+                mService = binder.getService()
+                mService?.weatherState = object : WeatherState {
+                    override fun onComplete() {
+                        viewModel.setIsForceRefresh(isRefresh = false, isForce = true)
                     }
-                    it.resumeWith(Result.success(Unit))
-                }
 
-                override fun onServiceDisconnected(arg0: ComponentName) {
-                    mService = null
+                    override fun onLoading(isLoading: Boolean) {
+                        viewModel.setRefresh(isLoading)
+                    }
                 }
+                it.resumeWith(Result.success(Unit))
             }
 
-            Intent(this, LocationService::class.java).also { intent ->
-                bindService(intent, connection, Context.BIND_AUTO_CREATE)
+            override fun onServiceDisconnected(arg0: ComponentName) {
+                mService = null
             }
+        }
+
+        Intent(this, LocationService::class.java).also { intent ->
+            bindService(intent, connection!!, Context.BIND_AUTO_CREATE)
         }
     }
 
@@ -104,6 +104,12 @@ class MainActivity : BaseActivity<MainViewModel>() {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
         val selectUnit = viewModel.selectUnit
+        val pullRefreshState =
+            rememberPullRefreshState(
+                refreshing = viewModel.isRefreshing,
+                onRefresh = { forceRefreshWeather() },
+                refreshingOffset = PullRefreshDefaults.RefreshingOffset * 2
+            )
 
         BackHandler(scaffoldState.drawerState.isOpen || modalBottomSheetState.isVisible) {
             scope.launch {
@@ -117,18 +123,7 @@ class MainActivity : BaseActivity<MainViewModel>() {
             }
         }
 
-        SwipeRefresh(
-            indicator = { state, trigger ->
-                SwipeRefreshIndicator(state = state, refreshTriggerDistance = trigger, scale = true)
-            },
-            swipeEnabled = scaffoldState.drawerState.isClosed && currentRoute != HomeRoute.Search.route,
-            indicatorPadding = WindowInsets.statusBars.asPaddingValues(),
-            clipIndicatorToPadding = false,
-            state = rememberSwipeRefreshState(viewModel.isRefreshing),
-            onRefresh = {
-                forceRefreshWeather()
-            },
-        ) {
+        Box(Modifier.pullRefresh(pullRefreshState)) {
             MainView(
                 scaffoldState,
                 selectUnit,
@@ -140,6 +135,15 @@ class MainActivity : BaseActivity<MainViewModel>() {
                 onClickSuggestion = { selectSuggestLocation(it) },
                 toggleUnit = { toggleUnit(it) }
             )
+
+            if (scaffoldState.drawerState.isClosed && currentRoute != HomeRoute.Search.route) {
+                PullRefreshIndicator(
+                    refreshing = viewModel.isRefreshing,
+                    state = pullRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    scale = true
+                )
+            }
         }
 
         FeatureThatRequiresLocationPermission {
@@ -147,6 +151,9 @@ class MainActivity : BaseActivity<MainViewModel>() {
                 val observer = LifecycleEventObserver { _, event ->
                     if (event == Lifecycle.Event.ON_RESUME) {
                         viewModel.setIsForceRefresh(isRefresh = true, isForce = false)
+                    }
+                    if (event == Lifecycle.Event.ON_STOP) {
+                        connection?.let { unbindService(it) }
                     }
                 }
 
@@ -164,7 +171,6 @@ class MainActivity : BaseActivity<MainViewModel>() {
 
                 onDispose {
                     lifecycleOwner.lifecycle.removeObserver(observer)
-                    unbindService(connection)
                     mService = null
                 }
             }
@@ -235,8 +241,9 @@ fun MainView(
                                 .background(color = colorResource(id = if (it == selectString) R.color.yellow else R.color.transparent))
                                 .clickable {
                                     scope.launch {
-                                        toggleUnit.invoke(it)
                                         modalBottomSheetState.hide()
+                                        delay(50)
+                                        toggleUnit.invoke(it)
                                     }
                                 },
                             contentAlignment = Alignment.Center,
@@ -254,8 +261,12 @@ fun MainView(
         sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
     ) {
         Scaffold(
-            content = {
-                NavHost(navController, startDestination = BottomNav.HomeNav.route) {
+            content = { padding ->
+                NavHost(
+                    navController = navController,
+                    startDestination = BottomNav.HomeNav.route,
+                    modifier = Modifier.padding(padding)
+                ) {
                     homeGraph(
                         scaffoldState,
                         navController,

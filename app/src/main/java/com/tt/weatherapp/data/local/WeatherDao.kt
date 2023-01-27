@@ -2,10 +2,7 @@ package com.tt.weatherapp.data.local
 
 import androidx.room.*
 import com.tt.weatherapp.common.Constant
-import com.tt.weatherapp.model.Current
-import com.tt.weatherapp.model.Daily
-import com.tt.weatherapp.model.Hourly
-import com.tt.weatherapp.model.Location
+import com.tt.weatherapp.model.*
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -52,4 +49,13 @@ interface WeatherDao {
 
     @Delete
     suspend fun deleteLocation(location: Location)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertWidgetLocation(widgetLocation: WidgetLocation)
+
+    @Delete
+    suspend fun deleteWidgetLocation(widgetLocation: WidgetLocation)
+
+    @Query("SELECT * FROM widgetlocation WHERE widgetId = :widgetId")
+    suspend fun getWidgetData(widgetId: Int): WidgetLocation?
 }

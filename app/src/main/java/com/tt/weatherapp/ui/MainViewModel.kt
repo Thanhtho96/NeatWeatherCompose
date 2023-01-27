@@ -129,42 +129,41 @@ class MainViewModel(
         }
     }
 
-    private suspend fun searchPlace(keyword: String) =
-        suspendCancellableCoroutine<List<LocationSuggestion>> { continuation ->
-            if (searchEngine == null) {
-                continuation.resumeWith(
-                    Result.failure(
-                        RuntimeException(mApplication.getString(R.string.search_engine_fail))
-                    )
+    private suspend fun searchPlace(keyword: String) = suspendCancellableCoroutine { continuation ->
+        if (searchEngine == null) {
+            continuation.resumeWith(
+                Result.failure(
+                    RuntimeException(mApplication.getString(R.string.search_engine_fail))
                 )
-                return@suspendCancellableCoroutine
-            }
-            searchEngine.search(
-                TextQuery(keyword, TextQuery.Area(GeoCoordinates(latitude, longitude))),
-                searchOptions,
-            ) { searchError, list ->
-                if (searchError != null || list == null) {
-                    continuation.resumeWith(Result.success(listOf()))
-                    return@search
-                }
-
-                val listResult =
-                    list.asSequence().filter { it != null && it.geoCoordinates != null }
-                        .filter { it.address.city.isNotBlank() && it.address.country.isNotBlank() }
-                        .distinctBy { "${it.address.city}, ${it.address.country}" }
-                        .filter { location -> "${location.address.city}, ${location.address.country}" !in listLocation.map { it.name } }
-                        .map {
-                            LocationSuggestion(
-                                it.address.city,
-                                it.address.country,
-                                it.geoCoordinates!!.latitude,
-                                it.geoCoordinates!!.longitude
-                            )
-                        }.toList()
-
-                continuation.resumeWith(Result.success(listResult))
-            }
+            )
+            return@suspendCancellableCoroutine
         }
+        searchEngine.search(
+            TextQuery(keyword, TextQuery.Area(GeoCoordinates(latitude, longitude))),
+            searchOptions,
+        ) { searchError, list ->
+            if (searchError != null || list == null) {
+                continuation.resumeWith(Result.success(listOf()))
+                return@search
+            }
+
+            val listResult =
+                list.asSequence().filter { it != null && it.geoCoordinates != null }
+                    .filter { it.address.city.isNotBlank() && it.address.country.isNotBlank() }
+                    .distinctBy { "${it.address.city}, ${it.address.country}" }
+                    .filter { location -> "${location.address.city}, ${location.address.country}" !in listLocation.map { it.name } }
+                    .map {
+                        LocationSuggestion(
+                            it.address.city,
+                            it.address.country,
+                            it.geoCoordinates!!.latitude,
+                            it.geoCoordinates!!.longitude
+                        )
+                    }.toList()
+
+            continuation.resumeWith(Result.success(listResult))
+        }
+    }
 
     private fun getWeatherInfo() {
         viewModelScope.launch(ioDispatcher) {

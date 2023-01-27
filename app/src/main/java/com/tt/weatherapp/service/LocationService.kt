@@ -1,23 +1,19 @@
 package com.tt.weatherapp.service
 
-import android.app.*
+import android.annotation.SuppressLint
+import android.app.Service
 import android.content.Intent
 import android.os.Binder
-import android.os.Build
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import androidx.annotation.StringRes
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.material.ExperimentalMaterialApi
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.android.gms.location.*
-import com.tt.weatherapp.R
 import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.data.local.WeatherDao
 import com.tt.weatherapp.data.repositories.AppRepository
 import com.tt.weatherapp.model.LocationSuggestion
 import com.tt.weatherapp.model.LocationType
-import com.tt.weatherapp.ui.MainActivity
 import com.tt.weatherapp.utils.PermissionUtil
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -26,9 +22,6 @@ import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.core.qualifier.named
 
-@ExperimentalPermissionsApi
-@ExperimentalFoundationApi
-@ExperimentalMaterialApi
 class LocationService : Service() {
     private val appRepository by inject<AppRepository>()
     private val scope by inject<CoroutineScope>()
@@ -43,57 +36,14 @@ class LocationService : Service() {
 
     var weatherState: WeatherState? = null
 
-    // If the notification supports a direct reply action, use
-    // PendingIntent.FLAG_MUTABLE instead.
-    private val pendingIntent by lazy {
-        Intent(this, MainActivity::class.java).let { notificationIntent ->
-            PendingIntent.getActivity(
-                this, 0, notificationIntent,
-                PendingIntent.FLAG_IMMUTABLE
-            )
-        }
-    }
-
-    private val notification by lazy {
-        Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle(getText(R.string.weather_location_title))
-            .setContentText(getText(R.string.weather_location_message))
-            .setSmallIcon(R.mipmap.ic_launcher_foreground)
-            .setContentIntent(pendingIntent)
-            .build()
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Create the NotificationChannel
-            val name = getString(R.string.weather_location_title)
-            val descriptionText = getString(R.string.weather_location_message)
-            val importance = NotificationManager.IMPORTANCE_LOW
-            val mChannel = NotificationChannel(CHANNEL_ID, name, importance)
-            mChannel.description = descriptionText
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
-            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(mChannel)
-        }
-    }
-
     override fun onCreate() {
         super.onCreate()
-        createNotificationChannel()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         initLocationCallBack()
         createLocationRequest()
     }
 
-    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        val isLocationPermissionGranted = PermissionUtil.isLocationPermissionGranted(this)
-        if (isLocationPermissionGranted.not()) return START_NOT_STICKY
-        startForeground(startId, notification)
-        getWeatherData(intent.getBooleanExtra(Constant.IS_FORCE_REFRESH, true))
-        return START_STICKY
-    }
-
+    @SuppressLint("MissingPermission")
     fun getWeatherData(isForceRefresh: Boolean) {
         scope.launch {
             this@LocationService.isForceRefresh = isForceRefresh
@@ -107,12 +57,14 @@ class LocationService : Service() {
                 PermissionUtil.isLocationPermissionGranted(this@LocationService)
             if (isLocationPermissionGranted.not()) return@launch
             fusedLocationClient.lastLocation.addOnCompleteListener {
-                if (it.result != null) {
-                    getWeatherData(it.result.latitude, it.result.longitude)
-                } else {
-                    startLocationService()
+                it.exception?.let { exception ->
+                    Log.e(TAG, "lastLocation exception: $exception")
                 }
-                weatherState?.onSuccess()
+                weatherState?.onComplete()
+            }.addOnSuccessListener {
+                getWeatherData(it.latitude, it.longitude)
+            }.addOnFailureListener {
+                startLocationService()
             }
         }
 
@@ -153,13 +105,11 @@ class LocationService : Service() {
     }
 
     private fun createLocationRequest() {
-        locationRequest = LocationRequest.create().apply {
-            interval = 1000000
-            fastestInterval = 500000
-            priority = Priority.PRIORITY_HIGH_ACCURACY
-        }
+        locationRequest =
+            LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1_000_000).build()
     }
 
+    @SuppressLint("MissingPermission")
     private fun startLocationService() {
         fusedLocationClient.requestLocationUpdates(
             locationRequest,
@@ -188,11 +138,11 @@ class LocationService : Service() {
     }
 
     companion object {
-        private const val CHANNEL_ID = "WEATHER_LOCATION_CHANNEL"
+        private const val TAG = "LocationService"
     }
 }
 
 interface WeatherState {
-    fun onSuccess()
+    fun onComplete()
     fun onLoading(isLoading: Boolean)
 }

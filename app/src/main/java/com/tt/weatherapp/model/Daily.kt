@@ -1,5 +1,8 @@
 package com.tt.weatherapp.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Daily(
     val dew_point: Double,
     val dt: Long,
