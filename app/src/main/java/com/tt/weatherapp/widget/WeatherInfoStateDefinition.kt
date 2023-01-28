@@ -52,7 +52,7 @@ sealed interface WeatherInfo {
     object Loading : WeatherInfo
 
     @Serializable
-    data class Available(val location: Location, val imagePath: String?) : WeatherInfo
+    data class Available(val location: Location) : WeatherInfo
 
     @Serializable
     data class Unavailable(@StringRes val message: Int = R.string.no_place_found) : WeatherInfo

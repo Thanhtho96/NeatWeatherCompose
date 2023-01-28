@@ -45,13 +45,13 @@
     <string name="txt_fahrenheit_temp_and_feel_like">%s°F - Feels Like: %s°F</string>
 
     <plurals name="txt_wind_meter_per_sec_compass_direction">
-        <item quantity="one">Wind: %1$.2f m/s - %2$s</item>
-        <item quantity="other">Wind: %1$.2f m/s - %2$s</item>
+        <item quantity="one">Wind: %1$d m/s - %2$s</item>
+        <item quantity="other">Wind: %1$d m/s - %2$s</item>
     </plurals>
 
     <plurals name="txt_wind_imperial_per_hour_compass_direction">
-        <item quantity="one">Wind: %1$.2f mile/h - %2$s</item>
-        <item quantity="other">Wind: %1$.2f miles/h - %2$s</item>
+        <item quantity="one">Wind: %1$d mile/h - %2$s</item>
+        <item quantity="other">Wind: %1$d miles/h - %2$s</item>
     </plurals>
 
     <plurals name="txt_wind_meter_description">
@@ -76,8 +76,10 @@
     <string name="txt_percentage">%s%%</string>
 
     <string name="txt_low">Low</string>
-    <string name="txt_medium">Medium</string>
-    <string name="txt_High">High</string>
+    <string name="txt_moderate">Medium</string>
+    <string name="txt_high">High</string>
+    <string name="txt_very_high">Very high</string>
+    <string name="txt_extreme">Extreme</string>
 
     <string-array name="compass_directions">
         <item>North</item>

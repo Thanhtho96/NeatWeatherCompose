@@ -56,16 +56,18 @@ class LocationService : Service() {
             val isLocationPermissionGranted =
                 PermissionUtil.isLocationPermissionGranted(this@LocationService)
             if (isLocationPermissionGranted.not()) return@launch
-            fusedLocationClient.lastLocation.addOnCompleteListener {
-                it.exception?.let { exception ->
-                    Log.e(TAG, "lastLocation exception: $exception")
+            fusedLocationClient.lastLocation
+                .addOnSuccessListener {
+                    if (it == null) {
+                        startLocationService()
+                        return@addOnSuccessListener
+                    }
+                    getWeatherData(it.latitude, it.longitude)
                 }
-                weatherState?.onComplete()
-            }.addOnSuccessListener {
-                getWeatherData(it.latitude, it.longitude)
-            }.addOnFailureListener {
-                startLocationService()
-            }
+                .addOnFailureListener {
+                    Log.e(TAG, "getWeatherData: $it")
+                    startLocationService()
+                }
         }
 
     }
@@ -88,17 +90,19 @@ class LocationService : Service() {
         getWeatherJob = scope.launch(ioDispatcher) {
             appRepository.getWeatherData(latitude, longitude, isForceRefresh, "").collect {
                 weatherState?.onLoading(it)
+                if (!it) {
+                    weatherState?.onComplete()
+                    stopSelf()
+                }
             }
-            stopSelf()
         }
     }
 
     private fun initLocationCallBack() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
-                locationResult.locations.forEach {
+                locationResult.locations.filterNotNull().firstOrNull()?.let {
                     getWeatherData(it.latitude, it.longitude)
-                    return@forEach
                 }
             }
         }

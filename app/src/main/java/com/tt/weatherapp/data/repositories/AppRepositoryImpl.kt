@@ -2,8 +2,8 @@ package com.tt.weatherapp.data.repositories
 
 import android.app.AlarmManager
 import android.content.Context
-import android.location.Geocoder
 import androidx.annotation.StringRes
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.data.local.DataStoreHelper
@@ -12,10 +12,17 @@ import com.tt.weatherapp.data.remotes.NetworkDataSource
 import com.tt.weatherapp.model.Location
 import com.tt.weatherapp.model.LocationSuggestion
 import com.tt.weatherapp.model.LocationType
+import com.tt.weatherapp.model.WidgetLocation
+import com.tt.weatherapp.utils.LocationUtil
 import com.tt.weatherapp.utils.convertSpeed
 import com.tt.weatherapp.utils.convertTemperature
+import com.tt.weatherapp.widget.WeatherInfo
+import com.tt.weatherapp.widget.WidgetUtil
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.flow
-import java.io.IOException
+import kotlinx.coroutines.withContext
 import java.util.*
 import kotlin.math.acos
 import kotlin.math.cos
@@ -25,7 +32,8 @@ class AppRepositoryImpl(
     private val context: Context,
     private val apiService: NetworkDataSource,
     private val dataStoreHelper: DataStoreHelper,
-    private val weatherDao: WeatherDao
+    private val weatherDao: WeatherDao,
+    private val ioDispatcher: CoroutineDispatcher
 ) : AppRepository {
     // open weather
     override suspend fun getWeatherData(
@@ -53,7 +61,7 @@ class AppRepositoryImpl(
                 val isLessThanFifteenMinutes =
                     Date().time - cachedLocation.weatherData.current.dt * 1000 <= AlarmManager.INTERVAL_FIFTEEN_MINUTES
 
-                if (distance <= 5 && isLessThanFifteenMinutes) {
+                if (distance <= LIMIT_DISTANCE_KILOMETER && isLessThanFifteenMinutes) {
                     return@flow
                 }
             }
@@ -73,33 +81,7 @@ class AppRepositoryImpl(
 
             when (cachedLocation?.type) {
                 LocationType.GPS, null -> {
-                    val address = try {
-                        Geocoder(context, Locale.getDefault()).getFromLocation(
-                            latitude,
-                            longitude,
-                            1
-                        ) ?: emptyList()
-                    } catch (e: IOException) {
-                        emptyList()
-                    }
-
-                    val builder = StringBuilder()
-                    val subAdminArea = address.firstOrNull()?.subAdminArea
-                    val adminArea = address.firstOrNull()?.adminArea
-                    subAdminArea?.let {
-                        builder.append(it)
-                        builder.append(", ")
-                    }
-                    adminArea?.let {
-                        builder.append(it)
-                        builder.append(", ")
-                    }
-
-                    val locationName = if (builder.isNotEmpty()) {
-                        builder.substring(0, builder.length - 2)
-                    } else {
-                        ""
-                    }
+                    val locationName = LocationUtil.getLocationName(context, latitude, longitude)
 
                     if (cachedLocation == null) {
                         val draftLocation = Location(
@@ -238,9 +220,112 @@ class AppRepositoryImpl(
             }
 
         weatherDao.insertLocation(updatedWeathers)
+
+        val manager = GlanceAppWidgetManager(context)
+        val listWidget = weatherDao.loadListWidget()
+
+        val newListWidget =
+            listWidget.filter { it.location.weatherData != null }
+                .map { widget ->
+                    val weatherData = widget.location.weatherData!!.let { weatherData ->
+                        val current = weatherData.current.copy(
+                            dew_point = weatherData.current.dew_point.convertTemperature(newUnit),
+                            feels_like = weatherData.current.feels_like.convertTemperature(newUnit),
+                            temp = weatherData.current.temp.convertTemperature(newUnit),
+                            wind_speed = weatherData.current.wind_speed.convertSpeed(newUnit),
+                        )
+
+                        val daily = weatherData.daily.map {
+                            it.copy(
+                                dew_point = it.dew_point.convertTemperature(newUnit),
+                                feels_like = it.feels_like.copy(
+                                    day = it.feels_like.day.convertTemperature(newUnit),
+                                    eve = it.feels_like.eve.convertTemperature(newUnit),
+                                    morn = it.feels_like.morn.convertTemperature(newUnit),
+                                    night = it.feels_like.night.convertTemperature(newUnit)
+                                ),
+                                temp = it.temp.copy(
+                                    day = it.temp.day.convertTemperature(newUnit),
+                                    eve = it.temp.eve.convertTemperature(newUnit),
+                                    morn = it.temp.morn.convertTemperature(newUnit),
+                                    night = it.temp.night.convertTemperature(newUnit),
+                                    max = it.temp.max.convertTemperature(newUnit),
+                                    min = it.temp.min.convertTemperature(newUnit)
+                                ),
+                                wind_speed = it.wind_speed.convertSpeed(newUnit)
+                            )
+                        }
+
+                        val hourly = weatherData.hourly.map {
+                            it.copy(
+                                feels_like = it.feels_like.convertTemperature(newUnit),
+                                temp = it.temp.convertTemperature(newUnit),
+                                wind_speed = it.wind_speed.convertSpeed(newUnit)
+                            )
+                        }
+
+                        weatherData.copy(
+                            current = current,
+                            daily = daily,
+                            hourly = hourly,
+                            unit = newUnit
+                        )
+                    }
+
+                    WidgetLocation(widget.widgetId, widget.location.copy(weatherData = weatherData))
+                }
+
+        weatherDao.insertWidgetLocation(newListWidget)
+
+        WidgetUtil.setWidgetState(
+            context,
+            newListWidget.associate {
+                val glanceId = try {
+                    manager.getGlanceIdBy(it.widgetId)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+                glanceId to WeatherInfo.Available(it.location)
+            }
+        )
     }
 
-    override suspend fun refreshLocation(language: String) {
+    override suspend fun refreshWidgetLocation() = withContext(ioDispatcher) {
+        val chosenUnit = dataStoreHelper.getChosenUnit(context)
+        val manager = GlanceAppWidgetManager(context)
 
+        val list = weatherDao.loadListWidget()
+        val newListWidget = list.map {
+            async {
+                val weatherData = apiService.getWeatherByCoordinate(
+                    it.location.lat,
+                    it.location.lon,
+                    "",
+                    chosenUnit.value
+                ).apply {
+                    unit = chosenUnit
+                }
+
+                WidgetLocation(it.widgetId, it.location.copy(weatherData = weatherData))
+            }
+        }.awaitAll()
+
+        weatherDao.insertWidgetLocation(newListWidget)
+
+        WidgetUtil.setWidgetState(
+            context,
+            newListWidget.associate {
+                val glanceId = try {
+                    manager.getGlanceIdBy(it.widgetId)
+                } catch (e: IllegalArgumentException) {
+                    null
+                }
+                glanceId to WeatherInfo.Available(it.location)
+            }
+        )
+    }
+
+    companion object {
+        private const val LIMIT_DISTANCE_KILOMETER = 5
     }
 }

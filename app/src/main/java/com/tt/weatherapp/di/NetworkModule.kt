@@ -13,6 +13,7 @@ import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -22,7 +23,15 @@ val networkModule = module {
     single { provideHttpClient(androidContext(), get()) }
     single { provideRetrofit(get()) }
     single { provideApiService(get()) }
-    single<AppRepository> { AppRepositoryImpl(androidContext(), get(), get(), get()) }
+    single<AppRepository> {
+        AppRepositoryImpl(
+            androidContext(),
+            get(),
+            get(),
+            get(),
+            get(named(Constant.Dispatcher.IO))
+        )
+    }
     single { NetworkEvent(get()) }
     single<NetworkDataSource> { provideRetrofitNetWork(get()) }
 }

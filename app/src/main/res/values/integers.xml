@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="uv_low">2</integer>
+    <integer name="uv_moderate">5</integer>
+    <integer name="uv_high">7</integer>
+    <integer name="uv_very_high">10</integer>
+    <integer name="uv_extreme">11</integer>
+</resources>

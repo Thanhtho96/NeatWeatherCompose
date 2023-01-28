@@ -14,4 +14,9 @@
     <color name="ic_launcher_background">#FFFFFF</color>
     <color name="text_unit_unselect">@color/white</color>
     <color name="home_grid">#5E444444</color>
+    <color name="uv_low">#7DD65B</color>
+    <color name="uv_moderate">#EBE063</color>
+    <color name="uv_high">#EA794E</color>
+    <color name="uv_very_high">#D64D57</color>
+    <color name="uv_extreme">#8D6DE6</color>
 </resources>

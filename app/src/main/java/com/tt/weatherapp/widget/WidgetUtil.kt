@@ -3,19 +3,18 @@ package com.tt.weatherapp.widget
 import android.content.Context
 import androidx.glance.GlanceId
 import androidx.glance.appwidget.state.updateAppWidgetState
-import androidx.glance.appwidget.updateAll
 
 object WidgetUtil {
-    suspend fun setWidgetState(context: Context, glanceIds: List<GlanceId>, newState: WeatherInfo) {
-        glanceIds.forEach { glanceId ->
+    suspend fun setWidgetState(context: Context, map: Map<GlanceId?, WeatherInfo>) {
+        map.filter { it.key != null }.forEach { info ->
             updateAppWidgetState(
                 context = context,
                 definition = WeatherInfoStateDefinition,
-                glanceId = glanceId,
-                updateState = { newState }
+                glanceId = info.key!!,
+                updateState = { info.value }
             )
+            WeatherGlanceWidget().update(context, info.key!!)
         }
-        WeatherGlanceWidget().updateAll(context)
     }
 
     suspend fun setWidgetState(context: Context, glanceId: GlanceId, newState: WeatherInfo) {

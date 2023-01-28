@@ -33,10 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.*
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.*
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.BaseActivity
@@ -44,11 +43,7 @@ import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.model.LocationSuggestion
 import com.tt.weatherapp.service.LocationService
 import com.tt.weatherapp.service.WeatherState
-import com.tt.weatherapp.ui.daily.Daily
-import com.tt.weatherapp.ui.home.Home
-import com.tt.weatherapp.ui.home.SearchPlace
-import com.tt.weatherapp.ui.hourly.Hourly
-import com.tt.weatherapp.ui.navigation.BottomNav
+import com.tt.weatherapp.ui.navigation.BuildAppNavHost
 import com.tt.weatherapp.ui.navigation.HomeRoute
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -262,58 +257,18 @@ fun MainView(
     ) {
         Scaffold(
             content = { padding ->
-                NavHost(
+                BuildAppNavHost(
                     navController = navController,
-                    startDestination = BottomNav.HomeNav.route,
-                    modifier = Modifier.padding(padding)
-                ) {
-                    homeGraph(
-                        scaffoldState,
-                        navController,
-                        viewModel,
-                        showSetting = { scope.launch { modalBottomSheetState.show() } },
-                        refresh = { refresh.invoke(it) },
-                        onClickSuggestion = { onClickSuggestion.invoke(it) }
-                    )
-                    composable(BottomNav.HourlyNav.route) { Hourly(navController, viewModel) }
-                    composable(BottomNav.DailyNav.route) { Daily(navController, viewModel) }
-                }
+                    padding = padding,
+                    scaffoldState = scaffoldState,
+                    viewModel = viewModel,
+                    scope = scope,
+                    modalBottomSheetState = modalBottomSheetState,
+                    refresh = refresh,
+                    onClickSuggestion = onClickSuggestion
+                )
             }
         )
-    }
-}
-
-@ExperimentalFoundationApi
-fun NavGraphBuilder.homeGraph(
-    scaffoldState: ScaffoldState,
-    navController: NavController,
-    viewModel: MainViewModel,
-    showSetting: () -> Unit,
-    refresh: (Boolean) -> Unit,
-    onClickSuggestion: (LocationSuggestion) -> Unit
-) {
-    navigation(startDestination = HomeRoute.Home.route, route = BottomNav.HomeNav.route) {
-        composable(HomeRoute.Home.route) {
-            Home(
-                scaffoldState,
-                viewModel,
-                showSetting,
-                refresh,
-                navigateHourly = { navController.navigate(BottomNav.HourlyNav.route) },
-                navigateDaily = { navController.navigate(BottomNav.DailyNav.route) },
-                navigateAddPlace = { navController.navigate(HomeRoute.Search.route) }
-            )
-        }
-        composable(HomeRoute.Search.route) {
-            SearchPlace(
-                navController,
-                viewModel,
-                onClickSuggestion = { locationSuggestion ->
-                    onClickSuggestion(locationSuggestion)
-                }
-            )
-        }
-        composable(HomeRoute.Settings.route) { }
     }
 }
 

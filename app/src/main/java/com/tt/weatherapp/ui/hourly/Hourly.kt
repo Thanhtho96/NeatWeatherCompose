@@ -18,9 +18,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
@@ -128,24 +130,31 @@ fun Hourly(navController: NavController, viewModel: MainViewModel) {
                                 fontWeight = FontWeight.Bold
                             )
                             Text(text = hourly.weather[0].description.capitalize(Locale.current))
-                            Text(
-                                text = res.getQuantityString(
-                                    homeWeatherUnit.windHourly,
-                                    hourly.wind_speed.roundToInt(),
-                                    hourly.wind_speed,
-                                    stringArrayResource(id = R.array.compass_directions)[((hourly.wind_deg % 360) / 22.5).roundToInt()]
-                                ),
-                                modifier = Modifier
-                                    .alpha(0.7F)
-                                    .padding(top = 3.dp)
-                            )
+
+                            if (hourly.wind_speed.roundToInt() > 0) {
+                                Text(
+                                    text = res.getQuantityString(
+                                        homeWeatherUnit.windHourly,
+                                        hourly.wind_speed.roundToInt(),
+                                        hourly.wind_speed.roundToInt(),
+                                        stringArrayResource(id = R.array.compass_directions)[((hourly.wind_deg % 360) / 22.5).roundToInt()]
+                                    ),
+                                    modifier = Modifier
+                                        .alpha(0.7F)
+                                        .padding(top = 3.dp)
+                                )
+                            }
+
                             hourly.rain?.oneHour?.let {
                                 Text(
                                     text = res.getString(
                                         R.string.txt_rain_volume,
                                         DecimalFormat.format(it)
                                     ),
-                                    modifier = Modifier.alpha(0.7F)
+                                    modifier = Modifier.alpha(0.7F),
+                                    style = TextStyle(
+                                        color = colorResource(id = R.color.blue)
+                                    )
                                 )
                             }
                             hourly.snow?.oneHour?.let {

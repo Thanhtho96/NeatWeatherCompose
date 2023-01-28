@@ -53,9 +53,22 @@ interface WeatherDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertWidgetLocation(widgetLocation: WidgetLocation)
 
-    @Delete
-    suspend fun deleteWidgetLocation(widgetLocation: WidgetLocation)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertWidgetLocation(widgetLocation: List<WidgetLocation>)
+
+    @Query("DELETE FROM widgetlocation WHERE widgetId IN (:widgetIds)")
+    suspend fun deleteWidgetLocation(widgetIds: List<Int>)
 
     @Query("SELECT * FROM widgetlocation WHERE widgetId = :widgetId")
     suspend fun getWidgetData(widgetId: Int): WidgetLocation?
+
+    @Query("SELECT * FROM widgetlocation")
+    suspend fun loadListWidget(): List<WidgetLocation>
+
+    @Query("UPDATE widgetlocation SET lat = :lat, lon = :lon, name = :name WHERE type = 'GPS'")
+    suspend fun updateGPSWidgetLocation(
+        lat: Double,
+        lon: Double,
+        name: String
+    )
 }

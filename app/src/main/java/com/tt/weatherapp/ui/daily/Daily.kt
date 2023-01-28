@@ -14,9 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -106,15 +108,17 @@ fun Daily(navController: NavController, viewModel: MainViewModel) {
                             ),
                             fontWeight = FontWeight.Bold
                         )
-                        Text(
-                            text = res.getQuantityString(
-                                homeWeatherUnit.windHourly,
-                                daily.wind_speed.roundToInt(),
-                                daily.wind_speed,
-                                stringArrayResource(id = R.array.compass_directions)[((daily.wind_deg % 360) / 22.5).roundToInt()]
-                            ),
-                            modifier = Modifier.padding(top = 3.dp)
-                        )
+                        Spacer(modifier = Modifier.height(3.dp))
+                        if (daily.wind_speed.roundToInt() > 0) {
+                            Text(
+                                text = res.getQuantityString(
+                                    homeWeatherUnit.windHourly,
+                                    daily.wind_speed.roundToInt(),
+                                    daily.wind_speed.roundToInt(),
+                                    stringArrayResource(id = R.array.compass_directions)[((daily.wind_deg % 360) / 22.5).roundToInt()]
+                                )
+                            )
+                        }
                         Text(
                             text = res.getString(
                                 homeWeatherUnit.dayDescription,
@@ -145,19 +149,46 @@ fun Daily(navController: NavController, viewModel: MainViewModel) {
                             text = res.getString(
                                 R.string.txt_uvi_description,
                                 when {
-                                    daily.uvi <= 4 -> {
+                                    daily.uvi <= res.getInteger(R.integer.uv_low) -> {
                                         res.getString(R.string.txt_low)
                                     }
-                                    daily.uvi <= 8 -> {
-                                        res.getString(R.string.txt_medium)
+                                    daily.uvi <= res.getInteger(R.integer.uv_moderate) -> {
+                                        res.getString(R.string.txt_moderate)
                                     }
-                                    else -> res.getString(R.string.txt_High)
+                                    daily.uvi <= res.getInteger(R.integer.uv_high) -> {
+                                        res.getString(R.string.txt_high)
+                                    }
+                                    daily.uvi <= res.getInteger(R.integer.uv_very_high) -> {
+                                        res.getString(R.string.txt_very_high)
+                                    }
+                                    else -> {
+                                        res.getString(R.string.txt_extreme)
+                                    }
                                 }
                             ),
                             fontSize = 13.sp,
                             modifier = Modifier
                                 .alpha(0.7F)
-                                .padding(top = 3.dp)
+                                .padding(top = 3.dp),
+                            style = TextStyle(
+                                color = when {
+                                    daily.uvi <= res.getInteger(R.integer.uv_low) -> {
+                                        colorResource(id = R.color.uv_low)
+                                    }
+                                    daily.uvi <= res.getInteger(R.integer.uv_moderate) -> {
+                                        colorResource(id = R.color.uv_moderate)
+                                    }
+                                    daily.uvi <= res.getInteger(R.integer.uv_high) -> {
+                                        colorResource(id = R.color.uv_high)
+                                    }
+                                    daily.uvi <= res.getInteger(R.integer.uv_very_high) -> {
+                                        colorResource(id = R.color.uv_very_high)
+                                    }
+                                    else -> {
+                                        colorResource(id = R.color.uv_extreme)
+                                    }
+                                }
+                            )
                         )
                         daily.rain?.let {
                             Text(
@@ -166,7 +197,10 @@ fun Daily(navController: NavController, viewModel: MainViewModel) {
                                     DecimalFormat.format(it)
                                 ),
                                 fontSize = 13.sp,
-                                modifier = Modifier.alpha(0.7F)
+                                modifier = Modifier.alpha(0.7F),
+                                style = TextStyle(
+                                    color = colorResource(id = R.color.blue)
+                                )
                             )
                         }
                         daily.snow?.let {

@@ -16,5 +16,5 @@ interface AppRepository {
 
     suspend fun toggleUnit(@StringRes unitId: Int)
 
-    suspend fun refreshLocation(language: String)
+    suspend fun refreshWidgetLocation()
 }

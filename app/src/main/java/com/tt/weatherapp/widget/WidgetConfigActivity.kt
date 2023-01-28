@@ -53,7 +53,7 @@ class WidgetConfigActivity : BaseActivity<WidgetConfigViewModel>() {
         WidgetUtil.setWidgetState(
             context,
             glanceId,
-            WeatherInfo.Available(location, null)
+            WeatherInfo.Available(location)
         )
 
         setResult(Activity.RESULT_OK)
