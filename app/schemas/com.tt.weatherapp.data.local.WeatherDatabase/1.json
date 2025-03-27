@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "aa58256bd7f0e707a6c3c82f17ec8cd6",
+    "identityHash": "24f1f91146b70332d234fe7535ff406d",
     "entities": [
       {
         "tableName": "Location",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`lat` REAL NOT NULL, `lon` REAL NOT NULL, `name` TEXT NOT NULL, `isDisplay` INTEGER NOT NULL, `type` TEXT NOT NULL, `current` TEXT NOT NULL, `daily` TEXT NOT NULL, `hourly` TEXT NOT NULL, `timezone` TEXT NOT NULL, `timezone_offset` INTEGER NOT NULL, `unit` TEXT NOT NULL, PRIMARY KEY(`lat`, `lon`, `type`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`lat` REAL NOT NULL, `lon` REAL NOT NULL, `searchName` TEXT NOT NULL, `isDisplay` INTEGER NOT NULL, `type` TEXT NOT NULL, `createAt` INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP, `clouds` TEXT, `cod` INTEGER, `coord` TEXT, `dt` INTEGER, `id` INTEGER, `main` TEXT, `name` TEXT, `rain` TEXT, `snow` TEXT, `sys` TEXT, `timezone` INTEGER, `visibility` INTEGER, `weather` TEXT, `wind` TEXT, `unit` TEXT, PRIMARY KEY(`lat`, `lon`, `type`))",
         "fields": [
           {
             "fieldPath": "lat",
@@ -21,8 +21,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "name",
-            "columnName": "name",
+            "fieldPath": "searchName",
+            "columnName": "searchName",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -39,49 +39,257 @@
             "notNull": true
           },
           {
-            "fieldPath": "weatherData.current",
-            "columnName": "current",
-            "affinity": "TEXT",
-            "notNull": true
+            "fieldPath": "createAt",
+            "columnName": "createAt",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "CURRENT_TIMESTAMP"
           },
           {
-            "fieldPath": "weatherData.daily",
-            "columnName": "daily",
+            "fieldPath": "weatherData.clouds",
+            "columnName": "clouds",
             "affinity": "TEXT",
-            "notNull": true
+            "notNull": false
           },
           {
-            "fieldPath": "weatherData.hourly",
-            "columnName": "hourly",
+            "fieldPath": "weatherData.cod",
+            "columnName": "cod",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "weatherData.coord",
+            "columnName": "coord",
             "affinity": "TEXT",
-            "notNull": true
+            "notNull": false
+          },
+          {
+            "fieldPath": "weatherData.dt",
+            "columnName": "dt",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "weatherData.id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "weatherData.main",
+            "columnName": "main",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "weatherData.name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "weatherData.rain",
+            "columnName": "rain",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "weatherData.snow",
+            "columnName": "snow",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "weatherData.sys",
+            "columnName": "sys",
+            "affinity": "TEXT",
+            "notNull": false
           },
           {
             "fieldPath": "weatherData.timezone",
             "columnName": "timezone",
-            "affinity": "TEXT",
-            "notNull": true
+            "affinity": "INTEGER",
+            "notNull": false
           },
           {
-            "fieldPath": "weatherData.timezone_offset",
-            "columnName": "timezone_offset",
+            "fieldPath": "weatherData.visibility",
+            "columnName": "visibility",
             "affinity": "INTEGER",
-            "notNull": true
+            "notNull": false
+          },
+          {
+            "fieldPath": "weatherData.weather",
+            "columnName": "weather",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "weatherData.wind",
+            "columnName": "wind",
+            "affinity": "TEXT",
+            "notNull": false
           },
           {
             "fieldPath": "weatherData.unit",
             "columnName": "unit",
             "affinity": "TEXT",
-            "notNull": true
+            "notNull": false
           }
         ],
         "primaryKey": {
+          "autoGenerate": false,
           "columnNames": [
             "lat",
             "lon",
             "type"
-          ],
-          "autoGenerate": false
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "WidgetLocation",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`widgetId` INTEGER NOT NULL, `lat` REAL NOT NULL, `lon` REAL NOT NULL, `searchName` TEXT NOT NULL, `isDisplay` INTEGER NOT NULL, `type` TEXT NOT NULL, `createAt` INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP, `clouds` TEXT, `cod` INTEGER, `coord` TEXT, `dt` INTEGER, `id` INTEGER, `main` TEXT, `name` TEXT, `rain` TEXT, `snow` TEXT, `sys` TEXT, `timezone` INTEGER, `visibility` INTEGER, `weather` TEXT, `wind` TEXT, `unit` TEXT, PRIMARY KEY(`widgetId`))",
+        "fields": [
+          {
+            "fieldPath": "widgetId",
+            "columnName": "widgetId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "location.lat",
+            "columnName": "lat",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "location.lon",
+            "columnName": "lon",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "location.searchName",
+            "columnName": "searchName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "location.isDisplay",
+            "columnName": "isDisplay",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "location.type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "location.createAt",
+            "columnName": "createAt",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "CURRENT_TIMESTAMP"
+          },
+          {
+            "fieldPath": "location.weatherData.clouds",
+            "columnName": "clouds",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "location.weatherData.cod",
+            "columnName": "cod",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "location.weatherData.coord",
+            "columnName": "coord",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "location.weatherData.dt",
+            "columnName": "dt",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "location.weatherData.id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "location.weatherData.main",
+            "columnName": "main",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "location.weatherData.name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "location.weatherData.rain",
+            "columnName": "rain",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "location.weatherData.snow",
+            "columnName": "snow",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "location.weatherData.sys",
+            "columnName": "sys",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "location.weatherData.timezone",
+            "columnName": "timezone",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "location.weatherData.visibility",
+            "columnName": "visibility",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "location.weatherData.weather",
+            "columnName": "weather",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "location.weatherData.wind",
+            "columnName": "wind",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "location.weatherData.unit",
+            "columnName": "unit",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "widgetId"
+          ]
         },
         "indices": [],
         "foreignKeys": []
@@ -90,7 +298,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'aa58256bd7f0e707a6c3c82f17ec8cd6')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '24f1f91146b70332d234fe7535ff406d')"
     ]
   }
 }

@@ -34,18 +34,21 @@ class NetworkInterceptor(
                     NetworkState.BAD_REQUEST.message
                 )
             )
+
             401 -> networkEvent.publish(
                 NetworkError(
                     NetworkState.UNAUTHORISED,
                     NetworkState.UNAUTHORISED.message
                 )
             )
+
             403 -> networkEvent.publish(
                 NetworkError(
                     NetworkState.FORBIDDEN,
                     NetworkState.FORBIDDEN.message
                 )
             )
+
             404 -> networkEvent.publish(
                 NetworkError(
                     NetworkState.NOT_FOUND,

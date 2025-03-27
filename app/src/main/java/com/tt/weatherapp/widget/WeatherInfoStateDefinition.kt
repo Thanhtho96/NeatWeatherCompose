@@ -7,11 +7,11 @@ import androidx.datastore.core.Serializer
 import androidx.datastore.dataStore
 import androidx.datastore.dataStoreFile
 import androidx.glance.state.GlanceStateDefinition
-import com.google.gson.JsonSyntaxException
 import com.tt.weatherapp.R
 import com.tt.weatherapp.model.Location
+import com.tt.weatherapp.utils.JsonUtil
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
 import java.io.InputStream
 import java.io.OutputStream
 
@@ -28,18 +28,17 @@ object WeatherInfoStateDefinition : GlanceStateDefinition<WeatherInfo> {
         override val defaultValue = WeatherInfo.Unavailable()
 
         override suspend fun readFrom(input: InputStream) = try {
-            Json.decodeFromString(
-                WeatherInfo.serializer(),
+            JsonUtil.json.decodeFromString<WeatherInfo>(
                 input.readBytes().decodeToString()
             )
-        } catch (exception: JsonSyntaxException) {
+        } catch (exception: IllegalArgumentException) {
             throw CorruptionException("Could not read weather data: ${exception.message}")
         }
 
         override suspend fun writeTo(t: WeatherInfo, output: OutputStream) {
             output.use {
                 it.write(
-                    Json.encodeToString(WeatherInfo.serializer(), t).encodeToByteArray()
+                    JsonUtil.json.encodeToString(t).encodeToByteArray()
                 )
             }
         }

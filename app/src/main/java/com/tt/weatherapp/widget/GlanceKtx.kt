@@ -8,7 +8,14 @@ import androidx.glance.GlanceModifier
 import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
-import androidx.glance.layout.*
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
+import androidx.glance.layout.Column
+import androidx.glance.layout.ColumnScope
+import androidx.glance.layout.Row
+import androidx.glance.layout.RowScope
+import androidx.glance.layout.fillMaxSize
+import com.tt.weatherapp.R
 
 /**
  * Provide a Box composable using the system parameters for app widgets background with rounded
@@ -65,7 +72,7 @@ fun AppWidgetRow(
 fun appWidgetBackgroundModifier() = GlanceModifier
     .fillMaxSize()
     .appWidgetBackground()
-    .background(GlanceTheme.colors.background)
+    .background(R.color.background)
     .appWidgetBackgroundCornerRadius()
 
 fun GlanceModifier.appWidgetBackgroundCornerRadius(): GlanceModifier {

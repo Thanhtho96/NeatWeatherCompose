@@ -6,7 +6,7 @@ import android.location.Geocoder
 import android.os.Build
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.IOException
-import java.util.*
+import java.util.Locale
 
 object LocationUtil {
     suspend fun getLocationName(context: Context, latitude: Double, longitude: Double) =

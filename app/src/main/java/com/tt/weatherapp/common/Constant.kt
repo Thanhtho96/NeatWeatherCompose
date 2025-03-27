@@ -4,7 +4,8 @@ import androidx.annotation.Keep
 
 object Constant {
     const val BASE_URL = "https://api.openweathermap.org/"
-    fun getWeatherIcon(icon: String) = "https://openweathermap.org/img/wn/${icon}@2x.png"
+
+    fun getWeatherIcon(icon: String) = "http://openweathermap.org/img/wn/${icon}@2x.png"
 
     @Keep
     enum class Unit(val value: String) {
@@ -12,7 +13,7 @@ object Constant {
         IMPERIAL("Imperial");
 
         companion object {
-            private val map = values().associateBy(Unit::value)
+            private val map = entries.associateBy(Unit::value)
             fun fromString(unit: String) = map[unit] ?: METRIC
         }
     }

@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -15,7 +14,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.drawable.toBitmapOrNull
 import androidx.glance.Button
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -47,10 +45,11 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import coil.imageLoader
-import coil.request.ErrorResult
-import coil.request.ImageRequest
-import coil.request.SuccessResult
+import coil3.BitmapImage
+import coil3.imageLoader
+import coil3.request.ErrorResult
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.Constant
@@ -143,148 +142,160 @@ class WeatherGlanceWidget : GlanceAppWidget() {
         val size = LocalSize.current
         val context = LocalContext.current
 
-        GlanceTheme {
-            when (weatherInfo) {
-                WeatherInfo.Loading -> {
-                    AppWidgetBox(contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+        when (weatherInfo) {
+            WeatherInfo.Loading -> {
+                AppWidgetBox(contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
                 }
+            }
 
-                is WeatherInfo.Available -> {
-                    val location = weatherInfo.location
-                    val weatherData = location.weatherData
-                    val weatherIcon = weatherData?.current?.weather?.first()?.icon ?: ""
-                    val imagePath = Constant.getWeatherIcon(weatherIcon)
-                    var image by remember(imagePath) { mutableStateOf<Bitmap?>(null) }
+            is WeatherInfo.Available -> {
+                val location = weatherInfo.location
+                val weatherData = location.weatherData
+                val weatherIcon = weatherData?.weather?.first()?.icon ?: ""
+                val imagePath = Constant.getWeatherIcon(weatherIcon)
+                var image by remember(imagePath) { mutableStateOf<Bitmap?>(null) }
 
-                    when (size) {
-                        smallMode, mediumMode -> {
-                            AppWidgetColumn(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = GlanceModifier
-                                    .appWidgetBackground()
-                                    .padding(10.dp)
-                                    .clickable(
-                                        actionRunCallback<UpdateWeatherAction>(
-                                            actionParametersOf(isGlobalWidgetAction to true)
+                when (size) {
+                    smallMode, mediumMode -> {
+                        AppWidgetColumn(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = GlanceModifier
+                                .appWidgetBackground()
+                                .padding(
+                                    vertical = 10.dp,
+                                    horizontal = if (size == smallMode) 10.dp else 20.dp
+                                )
+                                .clickable(
+                                    actionRunCallback<UpdateWeatherAction>(
+                                        actionParametersOf(isGlobalWidgetAction to true)
+                                    )
+                                )
+                        ) {
+                            Row(modifier = GlanceModifier.fillMaxWidth()) {
+                                Text(
+                                    text = location.searchName,
+                                    modifier = GlanceModifier.defaultWeight(),
+                                    maxLines = 1,
+                                    style = TextStyle(
+                                        fontSize = if (size == smallMode) 15.sp else 17.sp,
+                                        color = ColorProvider(
+                                            color = Color.White
                                         )
                                     )
-                            ) {
-                                Row(modifier = GlanceModifier.fillMaxWidth()) {
-                                    Text(
-                                        text = location.name,
-                                        modifier = GlanceModifier.defaultWeight(),
-                                        maxLines = 1,
-                                        style = TextStyle(
-                                            fontSize = 15.sp,
-                                            color = ColorProvider(
-                                                color = Color.White
-                                            )
+                                )
+                                if (location.type == LocationType.SEARCH) return@Row
+                                Spacer(modifier = GlanceModifier.size(7.dp))
+                                Image(
+                                    provider = ImageProvider(R.drawable.ic_location_on),
+                                    contentDescription = null,
+                                    modifier = GlanceModifier.size(if (size == smallMode) 20.dp else 23.dp),
+                                )
+                            }
+
+                            if (weatherData != null) {
+                                val homeWeatherUnit = HomeWeatherUnit(weatherData)
+
+                                Text(
+                                    text = context.getString(
+                                        if (size == smallMode) homeWeatherUnit.onlyDegreeSymbol else homeWeatherUnit.currentTemp,
+                                        weatherData.main.temp.roundToInt()
+                                    ),
+                                    style = TextStyle(
+                                        fontSize = if (size == smallMode) 40.sp else 50.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = ColorProvider(
+                                            color = Color.White
                                         )
                                     )
-                                    if (location.type == LocationType.SEARCH) return@Row
-                                    Spacer(modifier = GlanceModifier.size(7.dp))
-                                    Image(
-                                        provider = ImageProvider(R.drawable.ic_location_on),
-                                        contentDescription = null,
-                                        modifier = GlanceModifier.size(20.dp),
-                                    )
-                                }
-
-                                if (weatherData != null) {
-                                    val homeWeatherUnit = HomeWeatherUnit(weatherData)
-
-                                    Text(
-                                        text = context.getString(
-                                            homeWeatherUnit.onlyDegreeSymbol,
-                                            weatherData.current.temp.roundToInt()
-                                        ),
-                                        style = TextStyle(
-                                            fontSize = 40.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = ColorProvider(
-                                                color = Color.White
-                                            )
-                                        )
-                                    )
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        LaunchedEffect(imagePath) {
-                                            image = context.loadImage(imagePath)
-                                        }
-
-                                        if (image != null) {
-                                            Image(
-                                                provider = ImageProvider(image!!),
-                                                contentDescription = null,
-                                                modifier = GlanceModifier.size(17.dp),
-                                                contentScale = ContentScale.FillBounds
-                                            )
-                                        } else {
-                                            CircularProgressIndicator()
-                                        }
-
-                                        Spacer(modifier = GlanceModifier.size(4.dp))
-
-                                        Text(
-                                            text = weatherData.current.weather[0].main,
-                                            style = TextStyle(
-                                                fontSize = 13.sp,
-                                                color = ColorProvider(
-                                                    color = Color.White
-                                                )
-                                            )
-                                        )
+                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    LaunchedEffect(imagePath) {
+                                        image = context.loadImage(imagePath)
                                     }
 
-                                    Text(
-                                        text = context.getString(
-                                            homeWeatherUnit.highLowTempWidget,
-                                            weatherData.daily[0].temp.min.roundToInt().toString(),
-                                            weatherData.daily[0].temp.max.roundToInt().toString()
-                                        ),
-                                        style = TextStyle(
-                                            fontSize = 12.sp,
-                                            color = ColorProvider(
-                                                color = Color.White
-                                            )
+                                    image?.let {
+                                        Image(
+                                            provider = ImageProvider(it),
+                                            contentDescription = null,
+                                            modifier = GlanceModifier.size(if (size == smallMode) 27.dp else 32.dp),
+                                            contentScale = ContentScale.FillBounds
                                         )
-                                    )
-                                } else {
+                                    } ?: @Composable {
+                                        CircularProgressIndicator()
+                                    }
+
+                                    Spacer(modifier = GlanceModifier.size(4.dp))
+
                                     Text(
-                                        text = context.getString(R.string.null_face),
+                                        text = weatherData.weather[0].main,
                                         style = TextStyle(
-                                            fontSize = 40.sp,
-                                            fontWeight = FontWeight.Bold,
+                                            fontSize = if (size == smallMode) 13.sp else 15.sp,
                                             color = ColorProvider(
                                                 color = Color.White
                                             )
                                         )
                                     )
                                 }
+
+                                Text(
+                                    text = "${
+                                        context.getString(
+                                            if (size == smallMode) homeWeatherUnit.highLowTempWidget else homeWeatherUnit.highLowFullTempWidget,
+                                            weatherData.main.tempMin.roundToInt().toString(),
+                                            weatherData.main.tempMax.roundToInt().toString()
+                                        )
+                                    }  ${
+                                        if (size != smallMode) {
+                                            context.getString(
+                                                homeWeatherUnit.feelLikeFull,
+                                                weatherData.main.feelsLike.roundToInt().toString(),
+                                                weatherData.main.feelsLike.roundToInt().toString()
+                                            )
+                                        } else ""
+                                    }",
+                                    style = TextStyle(
+                                        fontSize = if (size == smallMode) 12.sp else 13.sp,
+                                        color = ColorProvider(
+                                            color = Color.White
+                                        )
+                                    )
+                                )
+                            } else {
+                                Text(
+                                    text = context.getString(R.string.null_face),
+                                    style = TextStyle(
+                                        fontSize = if (size == smallMode) 40.sp else 50.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = ColorProvider(
+                                            color = Color.White
+                                        )
+                                    )
+                                )
                             }
                         }
                     }
                 }
+            }
 
-                is WeatherInfo.Unavailable -> {
-                    AppWidgetColumn(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = context.getString(weatherInfo.message),
-                            style = TextStyle(
-                                color = ColorProvider(color = Color.White)
-                            )
+            is WeatherInfo.Unavailable -> {
+                AppWidgetColumn(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = context.getString(weatherInfo.message),
+                        style = TextStyle(
+                            color = ColorProvider(color = Color.White)
                         )
-                        Button(
-                            context.getString(R.string.refresh),
-                            actionRunCallback<UpdateWeatherAction>(
-                                actionParametersOf(isGlobalWidgetAction to false)
-                            )
+                    )
+                    Spacer(modifier = GlanceModifier.size(5.dp))
+                    Button(
+                        context.getString(R.string.refresh),
+                        actionRunCallback<UpdateWeatherAction>(
+                            actionParametersOf(isGlobalWidgetAction to false)
                         )
-                    }
+                    )
                 }
             }
         }
@@ -296,7 +307,7 @@ class WeatherGlanceWidget : GlanceAppWidget() {
         // Request the image to be loaded and throw error if it failed
         return when (val result = imageLoader.execute(request)) {
             is ErrorResult -> null
-            is SuccessResult -> result.drawable.toBitmapOrNull()
+            is SuccessResult -> (result.image as BitmapImage).bitmap
         }
     }
 }
@@ -307,7 +318,6 @@ class UpdateWeatherAction : ActionCallback {
     @OptIn(
         ExperimentalPermissionsApi::class,
         ExperimentalFoundationApi::class,
-        ExperimentalMaterialApi::class
     )
     override suspend fun onAction(
         context: Context,

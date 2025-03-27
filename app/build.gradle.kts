@@ -8,6 +8,7 @@ plugins {
     id("com.google.gms.google-services")
     alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.compose.compiler)
 }
 
 // Create a variable called keystorePropertiesFile, and initialize it to your
@@ -77,18 +78,20 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = JavaVersion.VERSION_21.toString()
     }
     buildFeatures {
         compose = true
         buildConfig = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.kotlinCompilerExtension.get()
+    composeCompiler {
+        reportsDestination = layout.buildDirectory.dir("compose_compiler")
+        stabilityConfigurationFiles =
+            listOf(rootProject.layout.projectDirectory.file("stability_config.conf"))
     }
     packaging {
         resources {
@@ -106,8 +109,7 @@ dependencies {
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
     androidTestImplementation(composeBom)
-    implementation(libs.compose.material.get3())
-    implementation(libs.compose.material.get2())
+    implementation(libs.compose.material)
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.preview)
     debugImplementation(libs.compose.ui.debug)
@@ -118,12 +120,14 @@ dependencies {
     implementation(libs.data.store)
     implementation(libs.koin)
     implementation(libs.retrofit)
-    implementation(libs.retrofit.gson.converter)
+    implementation(libs.retrofit.json.converter)
     implementation(libs.ok.http)
+    implementation(libs.ok.http.logging)
     implementation(libs.room)
     annotationProcessor(libs.room.compiler)
     ksp(libs.room.compiler)
     implementation(libs.coil)
+    implementation(libs.coil.network)
     val firebaseBom = platform(libs.firebase.bom)
     implementation(firebaseBom)
     implementation(libs.firebase.crashlytics)
@@ -134,7 +138,6 @@ dependencies {
     implementation(libs.flowlayout)
     implementation(libs.navigation)
     implementation(libs.widget)
-    implementation(libs.material)
     implementation(libs.kt.serialization)
     implementation(libs.worker)
 }

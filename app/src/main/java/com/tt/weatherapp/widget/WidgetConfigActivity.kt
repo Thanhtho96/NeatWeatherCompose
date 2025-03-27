@@ -1,18 +1,30 @@
 package com.tt.weatherapp.widget
 
-import android.app.Activity
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
@@ -48,6 +60,8 @@ class WidgetConfigActivity : BaseActivity<WidgetConfigViewModel>() {
         glanceId: GlanceId,
         location: Location
     ) {
+        setResult(RESULT_OK, this.intent)
+
         dao.insertWidgetLocation(WidgetLocation(appWidgetId, location))
 
         WidgetUtil.setWidgetState(
@@ -56,7 +70,6 @@ class WidgetConfigActivity : BaseActivity<WidgetConfigViewModel>() {
             WeatherInfo.Available(location)
         )
 
-        setResult(Activity.RESULT_OK)
         finish()
     }
 
@@ -67,7 +80,7 @@ class WidgetConfigActivity : BaseActivity<WidgetConfigViewModel>() {
         val listLocation = viewModel.listLocation.collectAsState()
         val scope = rememberCoroutineScope()
 
-        setResult(Activity.RESULT_CANCELED)
+        setResult(RESULT_CANCELED)
 
         val appWidgetId = intent?.extras?.getInt(
             AppWidgetManager.EXTRA_APPWIDGET_ID,
@@ -131,12 +144,12 @@ class WidgetConfigActivity : BaseActivity<WidgetConfigViewModel>() {
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                             fontWeight = FontWeight.Bold,
-                                            text = it.name.split(",").first().trim(),
+                                            text = it.searchName.split(",").first().trim(),
                                             color = Color.White
                                         )
                                         Spacer(modifier = Modifier.height(6.dp))
                                         Text(
-                                            text = it.name.split(",").last().trim(),
+                                            text = it.searchName.split(",").last().trim(),
                                             fontSize = 14.sp,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
@@ -156,7 +169,7 @@ class WidgetConfigActivity : BaseActivity<WidgetConfigViewModel>() {
                                 }
 
                                 Spacer(modifier = Modifier.size(12.dp))
-                                Divider()
+                                HorizontalDivider()
                             }
                         }
 

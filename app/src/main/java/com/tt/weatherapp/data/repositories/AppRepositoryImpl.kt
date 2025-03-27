@@ -2,6 +2,7 @@ package com.tt.weatherapp.data.repositories
 
 import android.app.AlarmManager
 import android.content.Context
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import com.tt.weatherapp.R
@@ -23,7 +24,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
-import java.util.*
+import java.util.Date
 import kotlin.math.acos
 import kotlin.math.cos
 import kotlin.math.sin
@@ -59,7 +60,7 @@ class AppRepositoryImpl(
                         )
 
                 val isLessThanFifteenMinutes =
-                    Date().time - cachedLocation.weatherData.current.dt * 1000 <= AlarmManager.INTERVAL_FIFTEEN_MINUTES
+                    Date().time - cachedLocation.weatherData.dt * 1000 <= AlarmManager.INTERVAL_FIFTEEN_MINUTES
 
                 if (distance <= LIMIT_DISTANCE_KILOMETER && isLessThanFifteenMinutes) {
                     return@flow
@@ -79,6 +80,8 @@ class AppRepositoryImpl(
                     unit = chosenUnit
                 }
 
+            Log.d(TAG, "getWeatherData: weatherData: $weatherData")
+
             when (cachedLocation?.type) {
                 LocationType.GPS, null -> {
                     val locationName = LocationUtil.getLocationName(context, latitude, longitude)
@@ -95,23 +98,33 @@ class AppRepositoryImpl(
                     }
 
                     weatherDao.updateGPSLocation(
-                        latitude,
-                        longitude,
-                        locationName,
-                        weatherData.current,
-                        weatherData.daily,
-                        weatherData.hourly,
-                        weatherData.timezone,
-                        weatherData.timezone_offset,
-                        chosenUnit
+                        lat = latitude,
+                        lon = longitude,
+                        clouds = weatherData.clouds,
+                        cod = weatherData.cod,
+                        coord = weatherData.coord,
+                        dt = weatherData.dt,
+                        id = weatherData.id,
+                        main = weatherData.main,
+                        name = weatherData.name,
+                        rain = weatherData.rain,
+                        snow = weatherData.snow,
+                        sys = weatherData.sys,
+                        timezone = weatherData.timezone,
+                        visibility = weatherData.visibility,
+                        weather = weatherData.weather,
+                        wind = weatherData.wind,
+                        unit = chosenUnit
                     )
                 }
+
                 LocationType.SEARCH -> {
                     val location = cachedLocation.copy(weatherData = weatherData)
                     weatherDao.insertLocation(location)
                 }
             }
         } catch (e: Exception) {
+            Log.e(TAG, "getWeatherData: ${e.cause} ${e.message}")
             cachedLocation?.let {
                 weatherDao.insertLocation(it)
             }
@@ -173,46 +186,18 @@ class AppRepositoryImpl(
             .map { location ->
                 val weatherData = location.weatherData!!
 
-                val current = weatherData.current.copy(
-                    dew_point = weatherData.current.dew_point.convertTemperature(newUnit),
-                    feels_like = weatherData.current.feels_like.convertTemperature(newUnit),
-                    temp = weatherData.current.temp.convertTemperature(newUnit),
-                    wind_speed = weatherData.current.wind_speed.convertSpeed(newUnit),
+                val main = weatherData.main.copy(
+                    feelsLike = weatherData.main.feelsLike.convertTemperature(newUnit),
+                    temp = weatherData.main.temp.convertTemperature(newUnit),
                 )
 
-                val daily = weatherData.daily.map {
-                    it.copy(
-                        dew_point = it.dew_point.convertTemperature(newUnit),
-                        feels_like = it.feels_like.copy(
-                            day = it.feels_like.day.convertTemperature(newUnit),
-                            eve = it.feels_like.eve.convertTemperature(newUnit),
-                            morn = it.feels_like.morn.convertTemperature(newUnit),
-                            night = it.feels_like.night.convertTemperature(newUnit)
-                        ),
-                        temp = it.temp.copy(
-                            day = it.temp.day.convertTemperature(newUnit),
-                            eve = it.temp.eve.convertTemperature(newUnit),
-                            morn = it.temp.morn.convertTemperature(newUnit),
-                            night = it.temp.night.convertTemperature(newUnit),
-                            max = it.temp.max.convertTemperature(newUnit),
-                            min = it.temp.min.convertTemperature(newUnit)
-                        ),
-                        wind_speed = it.wind_speed.convertSpeed(newUnit)
-                    )
-                }
-
-                val hourly = weatherData.hourly.map {
-                    it.copy(
-                        feels_like = it.feels_like.convertTemperature(newUnit),
-                        temp = it.temp.convertTemperature(newUnit),
-                        wind_speed = it.wind_speed.convertSpeed(newUnit)
-                    )
-                }
+                val wind = weatherData.wind.copy(
+                    speed = weatherData.wind.speed.convertSpeed(newUnit),
+                )
 
                 val newWeatherData = weatherData.copy(
-                    current = current,
-                    daily = daily,
-                    hourly = hourly,
+                    main = main,
+                    wind = wind,
                     unit = newUnit
                 )
 
@@ -228,46 +213,18 @@ class AppRepositoryImpl(
             listWidget.filter { it.location.weatherData != null }
                 .map { widget ->
                     val weatherData = widget.location.weatherData!!.let { weatherData ->
-                        val current = weatherData.current.copy(
-                            dew_point = weatherData.current.dew_point.convertTemperature(newUnit),
-                            feels_like = weatherData.current.feels_like.convertTemperature(newUnit),
-                            temp = weatherData.current.temp.convertTemperature(newUnit),
-                            wind_speed = weatherData.current.wind_speed.convertSpeed(newUnit),
+                        val main = weatherData.main.copy(
+                            feelsLike = weatherData.main.feelsLike.convertTemperature(newUnit),
+                            temp = weatherData.main.temp.convertTemperature(newUnit),
                         )
 
-                        val daily = weatherData.daily.map {
-                            it.copy(
-                                dew_point = it.dew_point.convertTemperature(newUnit),
-                                feels_like = it.feels_like.copy(
-                                    day = it.feels_like.day.convertTemperature(newUnit),
-                                    eve = it.feels_like.eve.convertTemperature(newUnit),
-                                    morn = it.feels_like.morn.convertTemperature(newUnit),
-                                    night = it.feels_like.night.convertTemperature(newUnit)
-                                ),
-                                temp = it.temp.copy(
-                                    day = it.temp.day.convertTemperature(newUnit),
-                                    eve = it.temp.eve.convertTemperature(newUnit),
-                                    morn = it.temp.morn.convertTemperature(newUnit),
-                                    night = it.temp.night.convertTemperature(newUnit),
-                                    max = it.temp.max.convertTemperature(newUnit),
-                                    min = it.temp.min.convertTemperature(newUnit)
-                                ),
-                                wind_speed = it.wind_speed.convertSpeed(newUnit)
-                            )
-                        }
-
-                        val hourly = weatherData.hourly.map {
-                            it.copy(
-                                feels_like = it.feels_like.convertTemperature(newUnit),
-                                temp = it.temp.convertTemperature(newUnit),
-                                wind_speed = it.wind_speed.convertSpeed(newUnit)
-                            )
-                        }
+                        val wind = weatherData.wind.copy(
+                            speed = weatherData.wind.speed.convertSpeed(newUnit),
+                        )
 
                         weatherData.copy(
-                            current = current,
-                            daily = daily,
-                            hourly = hourly,
+                            main = main,
+                            wind = wind,
                             unit = newUnit
                         )
                     }
@@ -326,6 +283,7 @@ class AppRepositoryImpl(
     }
 
     companion object {
+        private const val TAG = "AppRepositoryImpl"
         private const val LIMIT_DISTANCE_KILOMETER = 5
     }
 }

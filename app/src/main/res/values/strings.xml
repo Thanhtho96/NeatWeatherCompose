@@ -34,6 +34,8 @@
     <string name="txt_meter_visibility" translatable="false">%s m</string>
 
     <string name="txt_without_unit_low_high_temp" translatable="false">H:%s° L:%s°</string>
+    <string name="txt_celsius_unit_low_high_temp" translatable="false">High: %s°C\u0020\u0020Low: %s°C</string>
+    <string name="txt_fahrenheit_unit_low_high_temp" translatable="false">High: %s°F\u0020\u0020Low: %s°F</string>
     <string name="txt_celsius_low_high_temp" translatable="false">%s°C / %s°C</string>
     <string name="txt_fahrenheit_low_high_temp" translatable="false">%s°F / %s°F</string>
 
@@ -43,6 +45,8 @@
     <string name="txt_description_meter">%s. %s</string>
 
     <string name="txt_fahrenheit_temp_and_feel_like">%s°F - Feels Like: %s°F</string>
+    <string name="txt_celsius_feel_like_full">Feels Like: %s°C</string>
+    <string name="txt_fahrenheit_feel_like_full">Feels Like: %s°F</string>
 
     <plurals name="txt_wind_meter_per_sec_compass_direction">
         <item quantity="one">Wind: %1$d m/s - %2$s</item>

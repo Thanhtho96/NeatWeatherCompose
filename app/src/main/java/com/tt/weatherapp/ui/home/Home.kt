@@ -1,22 +1,51 @@
 package com.tt.weatherapp.ui.home
 
+import android.content.res.Configuration
 import android.content.res.Resources
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.colorResource
@@ -28,44 +57,42 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
+import androidx.compose.ui.zIndex
+import coil3.compose.AsyncImage
 import com.google.accompanist.flowlayout.FlowRow
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.Constant
-import com.tt.weatherapp.model.*
+import com.tt.weatherapp.model.HomeWeatherUnit
+import com.tt.weatherapp.model.Location
+import com.tt.weatherapp.model.LocationType
+import com.tt.weatherapp.model.WeatherData
 import com.tt.weatherapp.ui.MainViewModel
 import com.tt.weatherapp.utils.DateUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-@ExperimentalFoundationApi
 @Composable
 fun Home(
-    scaffoldState: ScaffoldState,
+    drawerState: DrawerState,
     viewModel: MainViewModel,
     showSetting: () -> Unit,
     refresh: (Boolean) -> Unit,
-    navigateHourly: () -> Unit,
-    navigateDaily: () -> Unit,
     navigateAddPlace: () -> Unit
 ) {
     val res = LocalContext.current.resources
     val locationState = viewModel.locationData ?: return
     val weatherData = locationState.weatherData ?: return
-    val current = weatherData.current
-    val daily = weatherData.daily
     val homeWeatherUnit = HomeWeatherUnit(weatherData)
     val scope = rememberCoroutineScope()
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        Scaffold(
-            scaffoldState = scaffoldState,
+        ModalNavigationDrawer(
+            drawerState = drawerState,
+            scrimColor = MaterialTheme.colorScheme.background,
             drawerContent = {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                     DrawerContent(
@@ -76,61 +103,66 @@ fun Home(
                         res,
                         homeWeatherUnit,
                         scope,
-                        scaffoldState
+                        drawerState
                     )
                 }
-            }
+            },
         ) {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                Column(
-                    modifier = Modifier
-                        .padding(it)
-                        .fillMaxSize()
-                        .statusBarsPadding()
-                ) {
-                    Row(
+                Scaffold {
+                    // Screen content
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .defaultMinSize(minHeight = dimensionResource(id = R.dimen.actionBarSize))
-                            .padding(horizontal = 17.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.End)
+                            .padding(it)
+                            .fillMaxSize()
                     ) {
-                        IconButton(modifier = Modifier.size(24.dp),
-                            onClick = { refresh.invoke(true) }) {
-                            Icon(
-                                Icons.Default.Refresh,
-                                null
-                            )
-                        }
-                        IconButton(
-                            modifier = Modifier.size(24.dp),
-                            onClick = {
-                                scope.launch {
-                                    scaffoldState.drawerState.apply {
-                                        if (isClosed) open() else close()
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = dimensionResource(id = R.dimen.actionBarSize))
+                                .padding(horizontal = 17.dp)
+                                .zIndex(7F),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)
+                        ) {
+                            IconButton(
+                                modifier = Modifier.size(46.dp),
+                                onClick = { refresh.invoke(true) }) {
+                                Icon(
+                                    Icons.Default.Refresh,
+                                    null
+                                )
+                            }
+                            IconButton(
+                                modifier = Modifier.size(46.dp),
+                                onClick = {
+                                    scope.launch {
+                                        drawerState.apply {
+                                            if (isClosed) open() else close()
+                                        }
                                     }
-                                }
-                            }) {
-                            Icon(
-                                Icons.Default.Menu,
-                                null
-                            )
+                                }) {
+                                Icon(
+                                    Icons.Default.Menu,
+                                    null
+                                )
+                            }
                         }
-                    }
 
-                    Column(Modifier.verticalScroll(rememberScrollState())) {
-                        MainInformation(
-                            res,
-                            current,
-                            homeWeatherUnit,
-                            daily,
-                            locationState,
-                            viewModel
-                        )
-                        Hourly(navigateHourly, res, viewModel, homeWeatherUnit)
-                        Daily(navigateDaily, res, viewModel)
-                        Spacer(modifier = Modifier.navigationBarsPadding())
+                        Column(
+                            Modifier
+                                .align(Alignment.TopStart)
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            MainInformation(
+                                res,
+                                weatherData,
+                                homeWeatherUnit,
+                                locationState,
+                                viewModel
+                            )
+                            Spacer(modifier = Modifier.navigationBarsPadding())
+                        }
                     }
                 }
             }
@@ -141,18 +173,18 @@ fun Home(
 @Composable
 private fun MainInformation(
     res: Resources,
-    current: Current,
+    weatherData: WeatherData,
     homeWeatherUnit: HomeWeatherUnit,
-    daily: List<Daily>,
     locationState: Location,
     viewModel: MainViewModel
 ) {
-    Column(modifier = Modifier.padding(horizontal = 12.dp)) {
+    Column(modifier = Modifier.padding(horizontal = 17.dp)) {
         Text(
             text = res.getString(
                 R.string.updated_at, DateUtil.format(
-                    DateUtil.DateFormat.HOUR_MINUTE,
-                    current.dt * 1000
+                    weatherData.dt,
+                    weatherData.timezone,
+                    DateUtil.DateFormat.HOUR_MINUTE
                 )
             ),
             fontSize = 14.sp
@@ -162,57 +194,51 @@ private fun MainInformation(
             Text(
                 text = res.getString(
                     homeWeatherUnit.currentTemp,
-                    current.temp.roundToInt().toString()
+                    weatherData.main.temp.roundToInt().toString()
                 ),
                 fontWeight = FontWeight.Bold,
-                fontSize = 37.sp,
+                fontSize = 50.sp,
                 modifier = Modifier.padding(end = 7.dp)
             )
             Text(
                 text = res.getString(
                     homeWeatherUnit.highLowTemp,
-                    daily[0].temp.min.roundToInt().toString(),
-                    daily[0].temp.max.roundToInt().toString()
+                    weatherData.main.tempMin.roundToInt().toString(),
+                    weatherData.main.tempMax.roundToInt().toString()
                 )
             )
         }
 
-        Text(text = locationState.name, fontSize = 20.sp)
+        Text(text = locationState.searchName, fontSize = 27.sp)
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(
-                painter = rememberAsyncImagePainter(
-                    ImageRequest.Builder(LocalContext.current)
-                        .data(
-                            data = Constant.getWeatherIcon(current.weather[0].icon)
-                        ).apply(block = fun ImageRequest.Builder.() {
-                            crossfade(true)
-                        }).build()
-                ),
+            AsyncImage(
+                model = Constant.getWeatherIcon(weatherData.weather[0].icon),
                 contentDescription = null,
-                modifier = Modifier.size(37.dp)
+                modifier = Modifier.size(40.dp)
             )
-
-            Text(text = current.weather[0].main)
+            Spacer(modifier = Modifier.size(4.dp))
+            Text(text = weatherData.weather[0].main, fontSize = 21.sp)
         }
 
         Text(
             text = res.getString(
                 R.string.txt_description_meter,
-                current.weather[0].description.capitalize(Locale.current),
+                weatherData.weather[0].description.capitalize(Locale.current),
                 res.getQuantityString(
                     homeWeatherUnit.windDescription,
-                    current.wind_speed.roundToInt(),
-                    current.wind_speed.roundToInt(),
-                    res.getStringArray(R.array.compass_directions)[((current.wind_deg % 360) / 22.5).roundToInt()],
+                    weatherData.wind.speed.roundToInt(),
+                    weatherData.wind.speed.roundToInt(),
+                    res.getStringArray(R.array.compass_directions)[((weatherData.wind.deg % 360) / 22.5).roundToInt()],
                 )
-            )
+            ),
+            fontSize = 21.sp
         )
 
         Text(
             modifier = Modifier.padding(top = 10.dp),
             text = res.getString(R.string.txt_current_weather),
-            fontSize = 19.sp
+            fontSize = 23.sp
         )
 
         BoxWithConstraints(
@@ -220,12 +246,18 @@ private fun MainInformation(
                 .fillMaxWidth()
                 .padding(vertical = 15.dp)
         ) {
-            val boxDimen = ((maxWidth.value - 12 * 2) / 3).dp - 1.dp
+            val spaceBetween = 17
+            val itemPerRow = when (LocalConfiguration.current.orientation) {
+                Configuration.ORIENTATION_LANDSCAPE -> 4
+                else -> 2
+            }
+            val boxDimen =
+                ((maxWidth.value - spaceBetween * (itemPerRow - 1)) / itemPerRow).dp - 1.dp // sometime it just need little space
 
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 FlowRow(
-                    mainAxisSpacing = 12.dp,
-                    crossAxisSpacing = 12.dp
+                    mainAxisSpacing = spaceBetween.dp,
+                    crossAxisSpacing = spaceBetween.dp
                 ) {
                     viewModel.listCurrentWeatherData.forEach { info ->
                         Column(
@@ -240,20 +272,18 @@ private fun MainInformation(
                             verticalArrangement = Arrangement.SpaceBetween
                         ) {
                             Image(
-                                modifier = Modifier
-                                    .height(23.dp)
-                                    .width(23.dp),
+                                modifier = Modifier.size(34.dp),
                                 painter = painterResource(id = info.icon),
                                 contentDescription = null
                             )
-                            Text(text = res.getString(info.name))
+                            Text(text = res.getString(info.name), fontSize = 26.sp)
                             Text(
                                 text =
-                                if (info.unit != null) res.getString(
-                                    info.unit,
-                                    info.data
-                                )
-                                else info.data,
+                                    if (info.unit != null) res.getString(
+                                        info.unit,
+                                        info.data
+                                    )
+                                    else info.data,
                                 fontSize = 21.sp
                             )
                         }
@@ -265,194 +295,6 @@ private fun MainInformation(
 }
 
 @Composable
-private fun Hourly(
-    navigateHourly: () -> Unit,
-    res: Resources,
-    viewModel: MainViewModel,
-    homeWeatherUnit: HomeWeatherUnit
-) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .clickable { navigateHourly.invoke() }) {
-        Column {
-            Row(
-                Modifier.padding(
-                    top = 10.dp,
-                    bottom = 7.dp,
-                    start = 12.dp,
-                    end = 12.dp
-                )
-            ) {
-                Text(
-                    modifier = Modifier.weight(1F),
-                    text = res.getString(R.string.txt_hourly),
-                    fontSize = 19.sp
-                )
-                Image(
-                    modifier = Modifier.align(Alignment.CenterVertically),
-                    painter = painterResource(id = R.drawable.ic_arrow_right),
-                    contentDescription = null
-                )
-            }
-
-            LazyRow(
-                contentPadding = PaddingValues(
-                    horizontal = 12.dp
-                ), horizontalArrangement = Arrangement.spacedBy(7.dp)
-            ) {
-                items(viewModel.hourly.take(25)) { hourly ->
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(horizontal = 5.dp)
-                    ) {
-                        Text(
-                            text = stringResource(
-                                homeWeatherUnit.onlyDegreeSymbol,
-                                hourly.temp.roundToInt().toString(),
-                            ),
-                            fontSize = 17.sp
-                        )
-                        Spacer(modifier = Modifier.height(20.dp))
-                        val rain =
-                            if (hourly.pop != null && hourly.pop > 0) {
-                                stringResource(
-                                    R.string.txt_percentage,
-                                    (hourly.pop * 100).roundToInt(),
-                                )
-                            } else {
-                                ""
-                            }
-                        Text(
-                            text = rain,
-                            color = colorResource(id = R.color.blue),
-                            fontSize = 15.sp
-                        )
-                        Spacer(modifier = Modifier.height(20.dp))
-                        Image(
-                            painter = rememberAsyncImagePainter(
-                                ImageRequest.Builder(
-                                    LocalContext.current
-                                ).data(
-                                    data = Constant.getWeatherIcon(
-                                        hourly.weather[0].icon
-                                    )
-                                )
-                                    .apply(block = fun ImageRequest.Builder.() {
-                                        crossfade(true)
-                                    }).build()
-                            ),
-                            contentDescription = null,
-                            modifier = Modifier.size(37.dp)
-                        )
-                        Text(
-                            text = DateUtil.format(
-                                DateUtil.DateFormat.HOUR_MINUTE,
-                                hourly.dt * 1000
-                            ).replace(":00", "h"),
-                            fontSize = 17.sp
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun Daily(
-    navigateDaily: () -> Unit,
-    res: Resources,
-    viewModel: MainViewModel
-) {
-    BoxWithConstraints(
-        Modifier
-            .fillMaxWidth()
-            .clickable {
-                navigateDaily.invoke()
-            }
-    ) {
-        val widthCol = (maxWidth - 12.dp * 2) / 7
-
-        Column(Modifier.padding(vertical = 15.dp, horizontal = 12.dp)) {
-            Row {
-                Text(
-                    modifier = Modifier
-                        .padding(top = 10.dp, bottom = 7.dp)
-                        .weight(1F),
-                    text = res.getString(R.string.txt_daily),
-                    fontSize = 19.sp
-                )
-                Image(
-                    modifier = Modifier.align(Alignment.CenterVertically),
-                    painter = painterResource(id = R.drawable.ic_arrow_right),
-                    contentDescription = null
-                )
-            }
-
-            Row {
-                viewModel.listDailyTempInfo.forEach {
-                    Column(
-                        modifier = Modifier
-                            .width(widthCol),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Spacer(modifier = Modifier.height(Dp(it.topMargin)))
-                        if (it.maxTemp == it.minTemp) {
-                            Text(text = it.maxTemp)
-                        } else {
-                            Text(text = it.maxTemp)
-                            Spacer(
-                                modifier = Modifier
-                                    .background(
-                                        shape = RoundedCornerShape(3.dp),
-                                        brush = Brush.verticalGradient(
-                                            colors = listOf(
-                                                Color(0xFFFF3300),
-                                                Color(0xFFF35625),
-                                                Color(0xFFFFC32B),
-                                            )
-                                        )
-                                    )
-                                    .height(Dp(it.height))
-                                    .width(5.dp)
-                            )
-                            Text(text = it.minTemp)
-                        }
-                    }
-                }
-            }
-            Row {
-                viewModel.listDailyTempInfo.forEach {
-                    Column(
-                        modifier = Modifier
-                            .width(widthCol),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Image(
-                            painter = rememberAsyncImagePainter(
-                                ImageRequest.Builder(
-                                    LocalContext.current
-                                ).data(
-                                    data = it.icon
-                                )
-                                    .apply(block = fun ImageRequest.Builder.() {
-                                        crossfade(true)
-                                    }).build()
-                            ),
-                            contentDescription = null,
-                            modifier = Modifier.size(37.dp)
-                        )
-                        Text(text = it.dayOfWeek)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@ExperimentalFoundationApi
-@Composable
 private fun DrawerContent(
     navigateAddPlace: () -> Unit,
     showSetting: () -> Unit,
@@ -461,30 +303,25 @@ private fun DrawerContent(
     res: Resources,
     homeWeatherUnit: HomeWeatherUnit,
     scope: CoroutineScope,
-    scaffoldState: ScaffoldState
+    drawerState: DrawerState
 ) {
     Column(Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.weight(1F),
-            contentPadding = WindowInsets.statusBars.asPaddingValues()
         ) {
-            item {
-                Spacer(modifier = Modifier.height(12.dp))
-            }
             items(
                 viewModel.listLocation,
                 key = { it.lat + it.lon + it.type.ordinal }) {
                 Column(
                     Modifier
-                        .fillMaxWidth()
-                        .animateItemPlacement()
+                        .animateItem()
                         .clickable {
                             scope.launch {
                                 viewModel.changeDisplayLocation(it)
 
                                 if (it.isDisplay) return@launch
 
-                                scaffoldState.drawerState.close()
+                                drawerState.close()
                                 refresh.invoke(false)
                             }
                         }
@@ -517,8 +354,9 @@ private fun DrawerContent(
                                     R.string.updated_at,
                                     if (it.weatherData != null) {
                                         DateUtil.format(
-                                            DateUtil.DateFormat.HOUR_MINUTE,
-                                            it.weatherData.current.dt * 1000
+                                            it.weatherData.dt,
+                                            it.weatherData.timezone,
+                                            DateUtil.DateFormat.HOUR_MINUTE
                                         )
                                     } else {
                                         stringResource(id = R.string.null_face)
@@ -535,9 +373,9 @@ private fun DrawerContent(
                         ) {
                             Text(
                                 modifier = Modifier.weight(1F),
-                                fontSize = 17.sp,
+                                fontSize = 27.sp,
                                 overflow = TextOverflow.Ellipsis,
-                                text = it.name
+                                text = it.searchName
                             )
                             if (it.type == LocationType.GPS) {
                                 Icon(
@@ -564,20 +402,13 @@ private fun DrawerContent(
                                     .padding(top = 7.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Image(
-                                    painter = rememberAsyncImagePainter(
-                                        ImageRequest.Builder(LocalContext.current)
-                                            .data(
-                                                data = Constant.getWeatherIcon(it.weatherData.current.weather[0].icon)
-                                            )
-                                            .apply(block = fun ImageRequest.Builder.() {
-                                                crossfade(true)
-                                            }).build()
-                                    ),
+                                AsyncImage(
+                                    model = Constant.getWeatherIcon(it.weatherData.weather[0].icon),
                                     contentDescription = null,
-                                    modifier = Modifier.size(37.dp)
+                                    modifier = Modifier.size(40.dp)
                                 )
-                                Text(text = it.weatherData.current.weather[0].main)
+                                Spacer(modifier = Modifier.size(4.dp))
+                                Text(text = it.weatherData.weather[0].main, fontSize = 21.sp)
                             }
                         }
 
@@ -588,7 +419,7 @@ private fun DrawerContent(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             val temp = (
-                                    it.weatherData?.current?.temp?.roundToInt()
+                                    it.weatherData?.main?.temp?.roundToInt()
                                         ?: res.getString(R.string.null_face)
                                     ).toString()
 
@@ -597,16 +428,18 @@ private fun DrawerContent(
                                     homeWeatherUnit.currentTemp,
                                     temp
                                 ),
-                                fontSize = 47.sp,
+                                fontSize = 50.sp,
                             )
                             if (it.type != LocationType.GPS) {
-                                IconButton(modifier = Modifier
-                                    .size(24.dp)
-                                    .align(Alignment.CenterVertically),
+                                IconButton(
+                                    modifier = Modifier
+                                        .size(46.dp)
+                                        .align(Alignment.CenterVertically),
                                     onClick = { viewModel.deleteLocation(it) }) {
                                     Icon(
                                         Icons.Default.Delete,
                                         null,
+                                        Modifier.size(24.dp),
                                         tint = colorResource(id = R.color.yellow)
                                     )
                                 }
@@ -614,7 +447,7 @@ private fun DrawerContent(
                         }
                         Spacer(modifier = Modifier.height(13.dp))
                     }
-                    Divider()
+                    HorizontalDivider()
                 }
             }
         }
@@ -625,20 +458,24 @@ private fun DrawerContent(
                 .padding(end = 27.dp, top = 20.dp, bottom = 20.dp)
                 .navigationBarsPadding(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(27.dp, Alignment.End)
+            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)
         ) {
-            IconButton(modifier = Modifier.size(24.dp),
+            IconButton(
+                modifier = Modifier.size(46.dp),
                 onClick = { navigateAddPlace.invoke() }) {
                 Icon(
                     Icons.Default.Add,
-                    null
+                    null,
+                    Modifier.size(24.dp)
                 )
             }
-            IconButton(modifier = Modifier.size(24.dp),
+            IconButton(
+                modifier = Modifier.size(46.dp),
                 onClick = { showSetting.invoke() }) {
                 Icon(
                     Icons.Default.Settings,
-                    null
+                    null,
+                    Modifier.size(24.dp)
                 )
             }
         }

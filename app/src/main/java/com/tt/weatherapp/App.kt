@@ -4,6 +4,9 @@ import android.app.Application
 import android.content.Context
 import android.util.Log
 import androidx.datastore.preferences.preferencesDataStore
+import coil3.ImageLoader
+import coil3.SingletonImageLoader
+import coil3.request.crossfade
 import com.here.sdk.core.engine.SDKNativeEngine
 import com.here.sdk.core.engine.SDKOptions
 import com.here.sdk.core.errors.InstantiationErrorException
@@ -18,7 +21,7 @@ import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
-class App : Application() {
+class App : Application(), SingletonImageLoader.Factory {
     override fun onCreate() {
         super.onCreate()
 
@@ -31,6 +34,12 @@ class App : Application() {
             androidContext(this@App)
             modules(appModule, networkModule, viewModelModule, dispatcherModule)
         }
+    }
+
+    override fun newImageLoader(context: Context): ImageLoader {
+        return ImageLoader.Builder(context)
+            .crossfade(true)
+            .build()
     }
 
     private fun initializeSearchEngine() {

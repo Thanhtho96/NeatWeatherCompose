@@ -1,7 +1,10 @@
 package com.tt.weatherapp.data.local
 
 import android.content.Context
-import androidx.room.*
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.tt.weatherapp.model.Location
 import com.tt.weatherapp.model.WidgetLocation
 
@@ -10,10 +13,8 @@ import com.tt.weatherapp.model.WidgetLocation
         Location::class,
         WidgetLocation::class
     ],
-    version = 3,
+    version = 1,
     autoMigrations = [
-        AutoMigration(from = 1, to = 2, spec = DatabaseMigrations.Schema1to2::class),
-        AutoMigration(from = 2, to = 3)
     ],
     exportSchema = true
 )

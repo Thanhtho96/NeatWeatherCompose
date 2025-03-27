@@ -3,9 +3,7 @@ package com.tt.weatherapp.ui.navigation
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.ModalBottomSheetState
-import androidx.compose.material.ScaffoldState
+import androidx.compose.material3.DrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
@@ -16,17 +14,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import com.tt.weatherapp.model.LocationSuggestion
 import com.tt.weatherapp.ui.MainViewModel
-import com.tt.weatherapp.ui.daily.Daily
 import com.tt.weatherapp.ui.home.Home
 import com.tt.weatherapp.ui.home.SearchPlace
-import com.tt.weatherapp.ui.hourly.Hourly
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 sealed class BottomNav(val route: String) {
     object HomeNav : BottomNav("home_route")
-    object HourlyNav : BottomNav("hourly_route")
-    object DailyNav : BottomNav("daily_route")
 }
 
 sealed class HomeRoute(val route: String) {
@@ -34,9 +26,8 @@ sealed class HomeRoute(val route: String) {
     object Search : HomeRoute("search")
 }
 
-@ExperimentalFoundationApi
 fun NavGraphBuilder.homeGraph(
-    scaffoldState: ScaffoldState,
+    drawerState: DrawerState,
     navController: NavController,
     viewModel: MainViewModel,
     showSetting: () -> Unit,
@@ -46,12 +37,10 @@ fun NavGraphBuilder.homeGraph(
     navigation(startDestination = HomeRoute.Home.route, route = BottomNav.HomeNav.route) {
         composable(HomeRoute.Home.route) {
             Home(
-                scaffoldState = scaffoldState,
+                drawerState = drawerState,
                 viewModel = viewModel,
                 showSetting = showSetting,
                 refresh = refresh,
-                navigateHourly = { navController.navigate(BottomNav.HourlyNav.route) },
-                navigateDaily = { navController.navigate(BottomNav.DailyNav.route) },
                 navigateAddPlace = { navController.navigate(HomeRoute.Search.route) }
             )
         }
@@ -68,16 +57,14 @@ fun NavGraphBuilder.homeGraph(
 }
 
 @ExperimentalFoundationApi
-@ExperimentalMaterialApi
 @Composable
 fun BuildAppNavHost(
     navController: NavHostController,
     padding: PaddingValues,
-    scaffoldState: ScaffoldState,
+    drawerState: DrawerState,
     viewModel: MainViewModel,
-    scope: CoroutineScope,
-    modalBottomSheetState: ModalBottomSheetState,
     refresh: (Boolean) -> Unit,
+    showSetting: () -> Unit,
     onClickSuggestion: (LocationSuggestion) -> Unit
 ) {
     NavHost(
@@ -86,24 +73,12 @@ fun BuildAppNavHost(
         modifier = Modifier.padding(padding)
     ) {
         homeGraph(
-            scaffoldState = scaffoldState,
+            drawerState = drawerState,
             navController = navController,
             viewModel = viewModel,
-            showSetting = { scope.launch { modalBottomSheetState.show() } },
+            showSetting = { showSetting.invoke() },
             refresh = { refresh.invoke(it) },
             onClickSuggestion = { onClickSuggestion.invoke(it) }
         )
-        composable(BottomNav.HourlyNav.route) {
-            Hourly(
-                navController = navController,
-                viewModel = viewModel
-            )
-        }
-        composable(BottomNav.DailyNav.route) {
-            Daily(
-                navController = navController,
-                viewModel = viewModel
-            )
-        }
     }
 }

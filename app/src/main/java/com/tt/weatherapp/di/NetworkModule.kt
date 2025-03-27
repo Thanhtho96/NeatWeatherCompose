@@ -1,6 +1,7 @@
 package com.tt.weatherapp.di
 
 import android.content.Context
+import com.tt.weatherapp.BuildConfig
 import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.common.network.NetworkEvent
 import com.tt.weatherapp.common.network.NetworkInterceptor
@@ -9,14 +10,17 @@ import com.tt.weatherapp.data.remotes.RetrofitNetwork
 import com.tt.weatherapp.data.remotes.RetrofitNetworkApi
 import com.tt.weatherapp.data.repositories.AppRepository
 import com.tt.weatherapp.data.repositories.AppRepositoryImpl
+import com.tt.weatherapp.utils.JsonUtil
 import okhttp3.Interceptor
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Response
+import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.concurrent.TimeUnit
 
 val networkModule = module {
@@ -62,7 +66,11 @@ private val interceptor: Interceptor = Interceptor { chain ->
 private fun provideRetrofit(client: OkHttpClient): Retrofit {
     return Retrofit.Builder().baseUrl(Constant.BASE_URL)
         .client(client)
-        .addConverterFactory(GsonConverterFactory.create())
+        .addConverterFactory(
+            JsonUtil.json.asConverterFactory(
+                "application/json; charset=UTF8".toMediaType()
+            )
+        )
         .build()
 }
 
@@ -72,8 +80,11 @@ private fun provideApiService(retrofit: Retrofit): RetrofitNetworkApi {
 
 private fun provideHttpClient(context: Context, networkEvent: NetworkEvent): OkHttpClient {
     val networkInterceptor = NetworkInterceptor(context, networkEvent)
+    val loggingInterceptor = HttpLoggingInterceptor()
+    loggingInterceptor.setLevel(if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY else HttpLoggingInterceptor.Level.NONE)
     return OkHttpClient.Builder()
         .addInterceptor(networkInterceptor)
+        .addInterceptor(loggingInterceptor)
         .addInterceptor(interceptor)
         .connectTimeout(180, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)

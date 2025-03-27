@@ -65,9 +65,11 @@ abstract class BaseActivity<M : BaseViewModel> : ComponentActivity() {
                 is ViewStatus.Error -> {
                     ShowOkDialog(uiState)
                 }
+
                 ViewStatus.ClickBack -> {
                     /*Do nothing*/
                 }
+
                 is ViewStatus.Toast -> toast(uiState.message)
                 is ViewStatus.ShowLoading -> ShowLoadingDialog(uiState.isLoading)
                 null -> Unit

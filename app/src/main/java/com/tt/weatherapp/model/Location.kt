@@ -4,14 +4,14 @@ import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import kotlinx.serialization.Serializable
-import java.util.*
+import java.util.Date
 
 @Serializable
 @Entity(primaryKeys = ["lat", "lon", "type"])
 data class Location(
     val lat: Double,
     val lon: Double,
-    val name: String,
+    val searchName: String,
     var isDisplay: Boolean,
     @Embedded val weatherData: WeatherData?,
     val type: LocationType = LocationType.GPS,

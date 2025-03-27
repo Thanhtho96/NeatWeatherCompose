@@ -1,55 +1,106 @@
 package com.tt.weatherapp.data.local
 
 import androidx.room.TypeConverter
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.tt.weatherapp.common.Constant
-import com.tt.weatherapp.model.Current
-import com.tt.weatherapp.model.Daily
-import com.tt.weatherapp.model.Hourly
+import com.tt.weatherapp.model.Clouds
+import com.tt.weatherapp.model.Coord
+import com.tt.weatherapp.model.Main
+import com.tt.weatherapp.model.Rain
+import com.tt.weatherapp.model.Snow
+import com.tt.weatherapp.model.Sys
+import com.tt.weatherapp.model.Weather
+import com.tt.weatherapp.model.Wind
+import com.tt.weatherapp.utils.JsonUtil
+import kotlinx.serialization.encodeToString
 
 class Converters {
     @TypeConverter
-    fun fromListHourlyToString(list: List<Hourly>): String {
-        return Gson().toJson(list)
+    fun fromCloudsToString(clouds: Clouds): String {
+        return JsonUtil.json.encodeToString(clouds)
     }
 
     @TypeConverter
-    fun fromStringToListHourly(value: String): List<Hourly> {
-        val listType = object : TypeToken<List<Hourly>>() {}.type
-        return Gson().fromJson(value, listType)
+    fun fromStringToClouds(value: String): Clouds {
+        return JsonUtil.json.decodeFromString(value)
     }
 
     @TypeConverter
-    fun fromListDailyToString(list: List<Daily>): String {
-        return Gson().toJson(list)
+    fun fromCoordToString(coord: Coord): String {
+        return JsonUtil.json.encodeToString(coord)
     }
 
     @TypeConverter
-    fun fromStringToListDaily(value: String): List<Daily> {
-        val listType = object : TypeToken<List<Daily>>() {}.type
-        return Gson().fromJson(value, listType)
+    fun fromStringToCoord(value: String): Coord {
+        return JsonUtil.json.decodeFromString(value)
+    }
+
+    @TypeConverter
+    fun fromMainToString(main: Main): String {
+        return JsonUtil.json.encodeToString(main)
+    }
+
+    @TypeConverter
+    fun fromStringToMain(value: String): Main {
+        return JsonUtil.json.decodeFromString(value)
+    }
+
+    @TypeConverter
+    fun fromRainToString(rain: Rain): String {
+        return JsonUtil.json.encodeToString(rain)
+    }
+
+    @TypeConverter
+    fun fromStringToRain(value: String): Rain {
+        return JsonUtil.json.decodeFromString(value)
+    }
+
+    @TypeConverter
+    fun fromSnowToString(snow: Snow): String {
+        return JsonUtil.json.encodeToString(snow)
+    }
+
+    @TypeConverter
+    fun fromStringToSnow(value: String): Snow {
+        return JsonUtil.json.decodeFromString(value)
+    }
+
+    @TypeConverter
+    fun fromSysToString(sys: Sys): String {
+        return JsonUtil.json.encodeToString(sys)
+    }
+
+    @TypeConverter
+    fun fromStringToSys(value: String): Sys {
+        return JsonUtil.json.decodeFromString(value)
+    }
+
+    @TypeConverter
+    fun fromWeatherListToString(weather: List<Weather>): String {
+        return JsonUtil.json.encodeToString(weather)
+    }
+
+    @TypeConverter
+    fun fromStringToWeatherList(value: String): List<Weather> {
+        return JsonUtil.json.decodeFromString(value)
+    }
+
+    @TypeConverter
+    fun fromWindToString(wind: Wind): String {
+        return JsonUtil.json.encodeToString(wind)
+    }
+
+    @TypeConverter
+    fun fromStringToWind(value: String): Wind {
+        return JsonUtil.json.decodeFromString(value)
     }
 
     @TypeConverter
     fun fromUnitToString(unit: Constant.Unit): String {
-        return Gson().toJson(unit)
+        return JsonUtil.json.encodeToString(unit)
     }
 
     @TypeConverter
     fun fromStringToUnit(value: String): Constant.Unit {
-        val listType = object : TypeToken<Constant.Unit>() {}.type
-        return Gson().fromJson(value, listType)
-    }
-
-    @TypeConverter
-    fun fromCurrentToString(current: Current): String {
-        return Gson().toJson(current)
-    }
-
-    @TypeConverter
-    fun fromStringToCurrent(value: String): Current {
-        val listType = object : TypeToken<Current>() {}.type
-        return Gson().fromJson(value, listType)
+        return JsonUtil.json.decodeFromString(value)
     }
 }

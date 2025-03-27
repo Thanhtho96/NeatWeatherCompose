@@ -1,8 +1,21 @@
 package com.tt.weatherapp.data.local
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
 import com.tt.weatherapp.common.Constant
-import com.tt.weatherapp.model.*
+import com.tt.weatherapp.model.Clouds
+import com.tt.weatherapp.model.Coord
+import com.tt.weatherapp.model.Location
+import com.tt.weatherapp.model.Main
+import com.tt.weatherapp.model.Rain
+import com.tt.weatherapp.model.Snow
+import com.tt.weatherapp.model.Sys
+import com.tt.weatherapp.model.Weather
+import com.tt.weatherapp.model.WidgetLocation
+import com.tt.weatherapp.model.Wind
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -28,17 +41,26 @@ interface WeatherDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertLocation(location: List<Location>)
 
-    @Query("UPDATE location SET lat = :lat, lon = :lon, name = :name, current = :current, daily = :daily, hourly = :hourly, timezone = :timezone, timezone_offset = :timezone_offset, unit = :unit WHERE type = 'GPS'")
+    @Query("UPDATE location SET lat = :lat, lon = :lon, searchName = :name, clouds = :clouds, cod = :cod, coord = :coord, dt = :dt, id = :id, main = :main, name = :name, rain = :rain, snow = :snow, sys = :sys, timezone = :timezone, visibility = :visibility, weather = :weather, wind = :wind, unit = :unit WHERE type = 'GPS'")
     suspend fun updateGPSLocation(
         lat: Double,
         lon: Double,
+        clouds: Clouds,
+        cod: Int,
+        coord: Coord,
+        dt: Long,
+        id: Int,
+        main: Main,
         name: String,
-        current: Current,
-        daily: List<Daily>,
-        hourly: List<Hourly>,
-        timezone: String,
-        timezone_offset: Int,
+        rain: Rain?,
+        snow: Snow?,
+        sys: Sys,
+        timezone: Int,
+        visibility: Int,
+        weather: List<Weather>,
+        wind: Wind,
         unit: Constant.Unit
+
     )
 
     @Query("UPDATE location set isDisplay = 1 WHERE type = 'GPS'")

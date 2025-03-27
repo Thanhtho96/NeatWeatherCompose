@@ -4,4 +4,5 @@
     android:minHeight="80dp"
     android:updatePeriodMillis="0"
     android:configure="com.tt.weatherapp.widget.WidgetConfigActivity"
-    android:widgetCategory="home_screen" />
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable" />
