@@ -254,7 +254,8 @@ private fun MainInformation(
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(spaceBetween.dp),
-                    maxItemsInEachRow = 2,
+                    verticalArrangement = Arrangement.spacedBy(spaceBetween.dp),
+                    maxItemsInEachRow = 2
                 ) {
                     viewModel.listCurrentWeatherData.forEach { info ->
                         Column(
