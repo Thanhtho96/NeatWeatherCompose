@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -25,7 +26,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
@@ -46,8 +46,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -62,7 +62,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import coil3.compose.AsyncImage
-import com.google.accompanist.flowlayout.FlowRow
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.Constant
 import com.tt.weatherapp.model.HomeWeatherUnit
@@ -80,10 +79,9 @@ fun Home(
     drawerState: DrawerState,
     viewModel: MainViewModel,
     showSetting: () -> Unit,
-    refresh: (Boolean) -> Unit,
-    navigateAddPlace: () -> Unit
+    refresh: (Boolean) -> Unit
 ) {
-    val res = LocalContext.current.resources
+    val res = LocalResources.current
     val locationState = viewModel.locationData ?: return
     val weatherData = locationState.weatherData ?: return
     val homeWeatherUnit = HomeWeatherUnit(weatherData)
@@ -96,7 +94,6 @@ fun Home(
             drawerContent = {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                     DrawerContent(
-                        navigateAddPlace,
                         showSetting,
                         refresh,
                         viewModel,
@@ -252,12 +249,12 @@ private fun MainInformation(
                 else -> 2
             }
             val boxDimen =
-                ((maxWidth.value - spaceBetween * (itemPerRow - 1)) / itemPerRow).dp - 1.dp // sometime it just need little space
+                ((maxWidth.value - spaceBetween * (itemPerRow - 1)) / itemPerRow).dp - 1.dp // sometimes it just need little space
 
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 FlowRow(
-                    mainAxisSpacing = spaceBetween.dp,
-                    crossAxisSpacing = spaceBetween.dp
+                    horizontalArrangement = Arrangement.spacedBy(spaceBetween.dp),
+                    maxItemsInEachRow = 2,
                 ) {
                     viewModel.listCurrentWeatherData.forEach { info ->
                         Column(
@@ -296,7 +293,6 @@ private fun MainInformation(
 
 @Composable
 private fun DrawerContent(
-    navigateAddPlace: () -> Unit,
     showSetting: () -> Unit,
     refresh: (Boolean) -> Unit,
     viewModel: MainViewModel,
@@ -460,15 +456,6 @@ private fun DrawerContent(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)
         ) {
-            IconButton(
-                modifier = Modifier.size(46.dp),
-                onClick = { navigateAddPlace.invoke() }) {
-                Icon(
-                    Icons.Default.Add,
-                    null,
-                    Modifier.size(24.dp)
-                )
-            }
             IconButton(
                 modifier = Modifier.size(46.dp),
                 onClick = { showSetting.invoke() }) {

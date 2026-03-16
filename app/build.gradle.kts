@@ -13,7 +13,7 @@ plugins {
 
 // Create a variable called keystorePropertiesFile, and initialize it to your
 // keystore.properties file, in the rootProject folder.
-val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystorePropertiesFile: File = rootProject.file("keystore.properties")
 
 // Initialize a new Properties() object called keystoreProperties.
 val keystoreProperties = Properties()
@@ -81,9 +81,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_21.toString()
-    }
     buildFeatures {
         compose = true
         buildConfig = true
@@ -105,11 +102,12 @@ ksp {
 }
 
 dependencies {
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar", "*.aar"))))
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
     androidTestImplementation(composeBom)
     implementation(libs.compose.material)
+    implementation(libs.compose.icons.core)
+    implementation(libs.compose.icons.extended)
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.preview)
     debugImplementation(libs.compose.ui.debug)
@@ -133,9 +131,7 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.analytics)
     implementation(libs.location)
-    implementation(libs.system.ui.controller)
     implementation(libs.permissions)
-    implementation(libs.flowlayout)
     implementation(libs.navigation)
     implementation(libs.widget)
     implementation(libs.kt.serialization)

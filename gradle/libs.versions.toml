@@ -1,39 +1,41 @@
 [versions]
 ##### Config build version ######
 compileSdk = "36"
-minSdk = "21"
+minSdk = "23"
 targetSdk = "36"
-versionCode = "22"
-versionName = "1.2.2"
+versionCode = "24"
+versionName = "1.2.3"
 ##### Config build version ######
 
-gradlePlugin = "8.9.1"
-kotlin = "2.1.20"
-googleService = "4.4.2"
-firebaseCrashlyticsGradle = "3.0.3"
-ksp = "2.1.20-1.0.32"
-composeBom = "2025.03.01"
-composeActivity = "1.10.1"
-composeLifecycle = "2.8.7"
-ktxCore = "1.15.0"
-lifeCycle = "2.8.7"
-dataStore = "1.1.4"
-koin = "3.4.3"
-retrofit = "2.11.0"
-okHttp = "4.12.0"
-room = "2.6.1"
-coil = "3.1.0"
-firebaseBom = "33.11.0"
+gradlePlugin = "8.13.2"
+kotlin = "2.3.10"
+googleService = "4.4.4"
+firebaseCrashlyticsGradle = "3.0.6"
+ksp = "2.3.2"
+composeBom = "2026.03.00"
+composeActivity = "1.13.0"
+composeLifecycle = "2.10.0"
+ktxCore = "1.18.0"
+lifeCycle = "2.10.0"
+dataStore = "1.2.1"
+koin = "4.1.1"
+retrofit = "3.0.0"
+okHttp = "5.3.2"
+room = "2.8.4"
+coil = "3.4.0"
+firebaseBom = "34.10.0"
 location = "21.3.0"
-accompanist = "0.30.0"
-navigation = "2.8.9"
+accompanist = "0.37.3"
+navigation = "2.9.7"
 widget = "1.1.1"
-ktSerialization = "1.6.3"
-worker = "2.10.0"
+ktSerialization = "1.10.0"
+worker = "2.11.1"
 
 [libraries]
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 compose-material = { group = "androidx.compose.material3", name = "material3" }
+compose-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }
+compose-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 compose-ui = { group = "androidx.compose.ui", name = "ui" }
 compose-ui-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 compose-ui-debug = { group = "androidx.compose.ui", name = "ui-tooling" }
@@ -52,12 +54,10 @@ room-compiler = { group = "androidx.room", name = "room-compiler", version.ref =
 coil = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 coil-network = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
-firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics-ktx" }
-firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
+firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
 location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "location" }
-system-ui-controller = { group = "com.google.accompanist", name = "accompanist-systemuicontroller", version.ref = "accompanist" }
 permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanist" }
-flowlayout = { group = "com.google.accompanist", name = "accompanist-flowlayout", version.ref = "accompanist" }
 navigation = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
 widget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "widget" }
 kt-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "ktSerialization" }

@@ -1,7 +1,6 @@
 package com.tt.weatherapp.ui
 
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
@@ -44,7 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -53,7 +52,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
@@ -63,11 +61,9 @@ import com.google.accompanist.permissions.shouldShowRationale
 import com.tt.weatherapp.R
 import com.tt.weatherapp.common.BaseActivity
 import com.tt.weatherapp.common.Constant
-import com.tt.weatherapp.model.LocationSuggestion
 import com.tt.weatherapp.service.LocationService
 import com.tt.weatherapp.service.WeatherState
 import com.tt.weatherapp.ui.navigation.BuildAppNavHost
-import com.tt.weatherapp.ui.navigation.HomeRoute
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
@@ -106,7 +102,7 @@ class MainActivity : BaseActivity<MainViewModel>() {
         }
 
         Intent(this, LocationService::class.java).also { intent ->
-            bindService(intent, connection!!, Context.BIND_AUTO_CREATE)
+            bindService(intent, connection!!, BIND_AUTO_CREATE)
         }
     }
 
@@ -118,8 +114,6 @@ class MainActivity : BaseActivity<MainViewModel>() {
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val navController = rememberNavController()
         val modalBottomSheetState = rememberModalBottomSheetState()
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = navBackStackEntry?.destination?.route
         val selectUnit = viewModel.selectUnit
         val pullRefreshState = rememberPullToRefreshState()
 
@@ -140,13 +134,11 @@ class MainActivity : BaseActivity<MainViewModel>() {
             onRefresh = { forceRefreshWeather() },
             state = pullRefreshState,
             indicator = {
-                if (drawerState.isClosed && currentRoute != HomeRoute.Search.route) {
-                    Indicator(
-                        modifier = Modifier.align(Alignment.TopCenter),
-                        isRefreshing = viewModel.isRefreshing,
-                        state = pullRefreshState
-                    )
-                }
+                Indicator(
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    isRefreshing = viewModel.isRefreshing,
+                    state = pullRefreshState
+                )
             }
         ) {
             MainView(
@@ -157,7 +149,6 @@ class MainActivity : BaseActivity<MainViewModel>() {
                 sheetState = modalBottomSheetState,
                 navController = navController,
                 refresh = { forceRefreshWeather(it) },
-                onClickSuggestion = { selectSuggestLocation(it) },
                 toggleUnit = { toggleUnit(it) }
             )
         }
@@ -198,10 +189,6 @@ class MainActivity : BaseActivity<MainViewModel>() {
         mService?.getWeatherData(isForceRefresh)
     }
 
-    private fun selectSuggestLocation(locationSuggestion: LocationSuggestion) {
-        mService?.chooseSuggestLocation(locationSuggestion)
-    }
-
     private fun toggleUnit(@StringRes unitId: Int) {
         mService?.toggleUnit(unitId)
     }
@@ -218,7 +205,6 @@ fun MainView(
     sheetState: SheetState,
     navController: NavHostController,
     refresh: (Boolean) -> Unit,
-    onClickSuggestion: (LocationSuggestion) -> Unit,
     toggleUnit: (Int) -> Unit
 ) {
     var isShowBottomSheet by remember { mutableStateOf(false) }
@@ -237,8 +223,7 @@ fun MainView(
                         delay(50)
                         sheetState.show()
                     }
-                },
-                onClickSuggestion = onClickSuggestion
+                }
             )
 
             if (isShowBottomSheet.not()) return@Scaffold
@@ -312,7 +297,7 @@ fun MainView(
 private fun FeatureThatRequiresLocationPermission(
     hasPermission: @Composable () -> Unit
 ) {
-    val res = LocalContext.current.resources
+    val res = LocalResources.current
 
     // Location permission state
     val locationPermissionState = rememberPermissionState(
@@ -333,7 +318,7 @@ private fun FeatureThatRequiresLocationPermission(
         }
         // If the user denied the permission but a rationale should be shown, or the user sees
         // the permission for the first time, explain why the feature is needed by the app and allow
-        // the user to be presented with the permission again or to not see the rationale any more.
+        // the user to be presented with the permission again or to not see the rationale anymore.
         is PermissionStatus.Denied -> {
             val permissionTitle = if (locationPermissionState.status.shouldShowRationale) {
                 // If the user has denied the permission but the rationale can be shown,

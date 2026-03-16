@@ -9,7 +9,7 @@ import com.tt.weatherapp.widget.WidgetConfigViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.koin.androidContext
-import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
@@ -18,9 +18,7 @@ val viewModelModule = module {
         MainViewModel(
             get(),
             get(),
-            get(),
-            get(named(Dispatcher.IO)),
-            get(named(Dispatcher.MAIN))
+            get(named(Dispatcher.IO))
         )
     }
     viewModel { WidgetConfigViewModel(get()) }
@@ -29,7 +27,6 @@ val viewModelModule = module {
 val appModule = module {
     single { DataStoreHelper() }
     single { App.appLifeScope }
-    single { App.searchEngine }
     single { WeatherDatabase.getDatabase(androidContext()).weatherDao() }
 }
 

@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="actionBarSize">47dp</dimen>
+
+    <!-- Widget  dimension -->
+    <dimen name="widget_1_cell">40dp</dimen>
+    <dimen name="widget_2_cell">110dp</dimen>
+    <dimen name="widget_2_5_cell">150dp</dimen>
+    <dimen name="widget_3_cell">180dp</dimen>
+    <dimen name="widget_4_cell">250dp</dimen>
+    <dimen name="widget_5_cell">320dp</dimen>
+    <dimen name="widget_6_cell">390dp</dimen>
 </resources>

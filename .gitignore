@@ -26,3 +26,4 @@ output.json
 
 # Android Profiling
 *.hprof
+/gradle/gradle-daemon-jvm.properties
